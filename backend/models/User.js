@@ -33,14 +33,8 @@ const User = sequelize.define("User", {
     type: DataTypes.ENUM("pending", "active", "suspended"),
     defaultValue: "pending",
   },
-  createdAt: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW,
-  },
-  updatedAt: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW,
-  },
+}, {
+  timestamps: true,
 });
 
 // Hash password before saving
@@ -51,6 +45,12 @@ User.beforeCreate(async (user) => {
 // Method to compare password
 User.prototype.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
+};
+
+// Association
+export const associateUser = (models) => {
+  User.hasOne(models.StartupProfile, { foreignKey: "userId" });
+  User.hasOne(models.InvestorProfile, { foreignKey: "userId" });
 };
 
 export default User;

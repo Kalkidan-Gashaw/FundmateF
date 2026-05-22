@@ -1,17 +1,18 @@
 # FundMate
 
-FundMate is a full-stack web application that connects entrepreneurs, investors, mentors, and admins on a single platform. Entrepreneurs can showcase their startups, investors can discover and fund new ventures, and mentors can guide startups to success. The project is divided into two main parts: a React + Vite frontend and a Node.js/Express + PostgreSQL backend.
+FundMate is a full-stack web application that connects entrepreneurs, investors, mentors, and admins in one platform. Entrepreneurs can create startup profiles, investors can browse startups and sign NDAs, and mentors can support founders through real-time chat and mentorship.
 
 ---
 
 ## Features
 
-- User authentication (signup/login) with roles: Entrepreneur, Investor, Mentor, Admin
-- Role-based dashboards for each user type
-- Secure JWT-based authentication
-- PostgreSQL database with Sequelize ORM
-- Modern UI with React, Tailwind CSS, and Vite
-- RESTful API for user management
+- User authentication with role-based access: Entrepreneur, Investor, Mentor, Admin
+- Real-time chat powered by Socket.IO
+- NDA signing workflow for investors to view confidential startup details
+- Startup profile creation and editing for entrepreneurs
+- Mentor requests, approved mentee connections, and one-on-one messaging
+- Secure JWT-based authorization and PostgreSQL data storage via Sequelize
+- Responsive React UI with Vite and Tailwind CSS
 
 ---
 
@@ -19,8 +20,8 @@ FundMate is a full-stack web application that connects entrepreneurs, investors,
 
 ```
 FUNDMATE/
-  backend/      # Node.js/Express API server
-  frontend/     # React + Vite client app
+  backend/      # Node.js/Express API server with Socket.IO and PostgreSQL
+  frontend/     # React + Vite client application
 ```
 
 ---
@@ -28,20 +29,21 @@ FUNDMATE/
 ## Getting Started
 
 ### Prerequisites
-- Node.js (v18+ recommended)
-- npm or yarn
+- Node.js v18 or newer
+- npm
 - PostgreSQL database
 
 ### Backend Setup
-1. Navigate to the backend folder:
+
+1. Open a terminal and go to the backend folder:
    ```bash
    cd backend
    ```
-2. Install dependencies:
+2. Install backend dependencies:
    ```bash
    npm install
    ```
-3. Create a `.env` file with your database credentials:
+3. Create a `.env` file in `backend/` with the following values:
    ```env
    DB_NAME=your_db_name
    DB_USER=your_db_user
@@ -55,14 +57,15 @@ FUNDMATE/
    ```bash
    npm run dev
    ```
-   The backend will run on `http://localhost:5000`.
+5. The API and Socket.IO server will be available at `http://localhost:5000`.
 
 ### Frontend Setup
-1. Navigate to the frontend folder:
+
+1. Open a second terminal and go to the frontend folder:
    ```bash
    cd frontend
    ```
-2. Install dependencies:
+2. Install frontend dependencies:
    ```bash
    npm install
    ```
@@ -70,20 +73,45 @@ FUNDMATE/
    ```bash
    npm run dev
    ```
-   The frontend will run on `http://localhost:5173` by default.
+4. The app should open at `http://localhost:5173`.
 
 ---
 
 ## Usage
-- Register as an entrepreneur, investor, mentor, or admin (admin requires a secret key).
-- Log in to access your role-specific dashboard.
-- Entrepreneurs can showcase startups, investors can browse and invest, mentors can offer guidance, and admins can manage users/startups.
+
+- Sign up or log in with an existing account.
+- Entrepreneurs can create and manage startup profiles.
+- Investors can browse startups, sign NDAs, and view protected startup details.
+- Mentors can connect with entrepreneurs and participate in mentorship chat.
+- Admins can manage platform users and review startup profiles.
+
+---
+
+## Available Scripts
+
+### Backend
+- `npm run dev` - start backend with nodemon
+- `npm start` - run backend using Node
+
+### Frontend
+- `npm run dev` - start the Vite development server
+- `npm run build` - build the production frontend bundle
+- `npm run preview` - preview the production build
+- `npm run lint` - run ESLint
 
 ---
 
 ## Tech Stack
-- **Frontend:** React, Vite, Tailwind CSS, Axios, React Router
-- **Backend:** Node.js, Express, Sequelize, PostgreSQL, JWT, bcrypt
+- **Frontend:** React 19, Vite, Tailwind CSS, Axios, React Router, Socket.IO Client
+- **Backend:** Node.js, Express, Sequelize, PostgreSQL, Socket.IO, JWT, bcrypt
+
+---
+
+## Notes
+
+- The backend automatically syncs database models at startup.
+- Investors must sign an NDA before viewing confidential startup details.
+- The chat feature uses socket events for real-time messaging and typing indicators.
 
 ---
 

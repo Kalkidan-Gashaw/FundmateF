@@ -1,12 +1,11 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  User, 
-  Settings, 
-  Search, 
-  Heart, 
-  FileText, 
+import {
+  User,
+  Settings,
+  Search,
+  Heart,
+  FileText,
   LogOut,
   TrendingUp,
   DollarSign,
@@ -17,7 +16,7 @@ import {
   Clock,
   Target,
   Shield,
-  BarChart3
+  BarChart3,
 } from "lucide-react";
 
 const InvestorDashboard = () => {
@@ -27,12 +26,12 @@ const InvestorDashboard = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     const userData = localStorage.getItem("user");
-    
+
     if (!token) {
       navigate("/login");
       return;
     }
-    
+
     setUser(JSON.parse(userData));
   }, [navigate]);
 
@@ -49,7 +48,8 @@ const InvestorDashboard = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-              Welcome back, <span className="text-green-600">{user?.name}</span>!
+              Welcome back, <span className="text-green-600">{user?.name}</span>
+              !
             </h1>
             <div className="flex items-center space-x-4">
               <div className="px-4 py-2 bg-green-100 rounded-full text-sm font-medium text-green-800">
@@ -59,7 +59,11 @@ const InvestorDashboard = () => {
                 </span>
               </div>
               <div className="text-gray-600">
-                Last login: Today, {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                Last login: Today,{" "}
+                {new Date().toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
               </div>
             </div>
           </div>
@@ -67,7 +71,7 @@ const InvestorDashboard = () => {
             <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition">
               <Bell className="h-5 w-5" />
             </button>
-            <button 
+            <button
               onClick={handleLogout}
               className="flex items-center space-x-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition font-medium"
             >
@@ -136,26 +140,36 @@ const InvestorDashboard = () => {
               Quick Actions
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <button className="p-4 rounded-lg border border-gray-200 hover:border-green-500 hover:bg-green-50 transition group text-left">
+              <button
+                onClick={() => navigate("/investor/preferences")}
+                className="p-4 rounded-lg border border-gray-200 hover:border-green-500 hover:bg-green-50 transition group text-left"
+              >
                 <div className="flex items-center">
                   <div className="p-3 bg-green-100 rounded-lg mr-4 group-hover:bg-green-200">
                     <Settings className="h-6 w-6 text-green-600" />
                   </div>
                   <div>
                     <p className="font-medium text-gray-900">Set Preferences</p>
-                    <p className="text-sm text-gray-500">Define investment criteria</p>
+                    <p className="text-sm text-gray-500">
+                      Define investment criteria
+                    </p>
                   </div>
                 </div>
               </button>
 
-              <button className="p-4 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition group text-left">
+              <button
+                onClick={() => navigate("/investor/startups")}
+                className="p-4 rounded-lg border border-gray-200 hover:border-green-500 hover:bg-green-50 transition group text-left"
+              >
                 <div className="flex items-center">
-                  <div className="p-3 bg-blue-100 rounded-lg mr-4 group-hover:bg-blue-200">
-                    <Search className="h-6 w-6 text-blue-600" />
+                  <div className="p-3 bg-green-100 rounded-lg mr-4 group-hover:bg-green-200">
+                    <Search className="h-6 w-6 text-green-600" />
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">Discover Startups</p>
-                    <p className="text-sm text-gray-500">Browse new opportunities</p>
+                    <p className="font-medium text-gray-900">Find Startups</p>
+                    <p className="text-sm text-gray-500">
+                      Discover investment opportunities
+                    </p>
                   </div>
                 </div>
               </button>
@@ -194,16 +208,47 @@ const InvestorDashboard = () => {
             </h2>
             <div className="space-y-4">
               {[
-                { id: 1, name: "AI HealthTech", sector: "Healthcare AI", funding: "$500K", stage: "Seed", match: "95%", description: "AI-powered diagnostic platform" },
-                { id: 2, name: "Clean Energy Solutions", sector: "Renewable Energy", funding: "$1.2M", stage: "Series A", match: "88%", description: "Solar energy optimization" },
-                { id: 3, name: "FinTech Platform", sector: "Financial Services", funding: "$750K", stage: "Seed", match: "92%", description: "Digital banking for SMEs" },
+                {
+                  id: 1,
+                  name: "AI HealthTech",
+                  sector: "Healthcare AI",
+                  funding: "$500K",
+                  stage: "Seed",
+                  match: "95%",
+                  description: "AI-powered diagnostic platform",
+                },
+                {
+                  id: 2,
+                  name: "Clean Energy Solutions",
+                  sector: "Renewable Energy",
+                  funding: "$1.2M",
+                  stage: "Series A",
+                  match: "88%",
+                  description: "Solar energy optimization",
+                },
+                {
+                  id: 3,
+                  name: "FinTech Platform",
+                  sector: "Financial Services",
+                  funding: "$750K",
+                  stage: "Seed",
+                  match: "92%",
+                  description: "Digital banking for SMEs",
+                },
               ].map((startup) => (
-                <div key={startup.id} className="p-4 border border-gray-200 rounded-xl hover:border-green-500 hover:shadow-md transition">
+                <div
+                  key={startup.id}
+                  className="p-4 border border-gray-200 rounded-xl hover:border-green-500 hover:shadow-md transition"
+                >
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className="font-bold text-gray-900 text-lg">{startup.name}</h3>
+                      <h3 className="font-bold text-gray-900 text-lg">
+                        {startup.name}
+                      </h3>
                       <p className="text-sm text-gray-500">{startup.sector}</p>
-                      <p className="text-sm text-gray-600 mt-1">{startup.description}</p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {startup.description}
+                      </p>
                     </div>
                     <div className="text-right">
                       <span className="inline-block px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
@@ -214,12 +259,18 @@ const InvestorDashboard = () => {
                   <div className="mt-4 flex items-center justify-between">
                     <div className="flex space-x-4">
                       <div>
-                        <p className="text-xs text-gray-500">Funding Required</p>
-                        <p className="font-medium text-gray-900">{startup.funding}</p>
+                        <p className="text-xs text-gray-500">
+                          Funding Required
+                        </p>
+                        <p className="font-medium text-gray-900">
+                          {startup.funding}
+                        </p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-500">Stage</p>
-                        <p className="font-medium text-gray-900">{startup.stage}</p>
+                        <p className="font-medium text-gray-900">
+                          {startup.stage}
+                        </p>
                       </div>
                     </div>
                     <div className="flex space-x-2">
@@ -245,7 +296,9 @@ const InvestorDashboard = () => {
                 {user?.name?.charAt(0) || "I"}
               </div>
               <div>
-                <h3 className="font-bold text-gray-900 text-lg">{user?.name}</h3>
+                <h3 className="font-bold text-gray-900 text-lg">
+                  {user?.name}
+                </h3>
                 <p className="text-sm text-gray-500">{user?.email}</p>
                 <span className="inline-block mt-1 px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full">
                   Verified Investor

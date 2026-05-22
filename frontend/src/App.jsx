@@ -5,10 +5,29 @@ import Navbar from "./layout/Navbar";
 import Signup from "./components/Signup";
 import Login from "./components/Login";
 import Dashboard from "./components/Dashboard";
+import InvestorPreferences from "./components/investor/InvestorPreferences";
 import EntrepreneurDashboard from "./components/EntrepreneurDashboard";
-import InvestorDashboard from "./components/InvestorDashboard";
+import InvestorDashboard from "./components/investor/InvestorDashboard";
 import MentorDashboard from "./components/MentorDashboard";
 import AdminDashboard from "./components/AdminDashboard";
+import CreateStartup from "./components/entrepreneur/CreateStartup";
+import EditStartup from "./components/entrepreneur/EditStartup";
+import MyStartup from "./components/entrepreneur/MyStartup";
+import FindStartups from "./components/investor/FindStartups";
+import StartupDetail from "./components/investor/StartupDetail";
+
+import FindInvestors from "./components/entrepreneur/FindInvestors";
+import MyNdaRequests from "./components/investor/MyNdaRequests";
+
+import FindMentors from "./components/entrepreneur/FindMentors";
+import RequestMentorship from "./components/entrepreneur/RequestMentorship";
+import MyMentorshipRequests from "./components/entrepreneur/MyMentorshipRequests";
+
+import MentorProfileSetup from "./components/mentor/MentorProfileSetup";
+import PendingRequests from "./components/mentor/PendingRequests";
+import MyMentees from "./components/mentor/MyMentees";
+import Resources from "./components/mentor/Resources";
+import ChatPage from "./components/chat/ChatPage";
 
 function AppContent() {
   const { user, loading } = useContext(AuthContext);
@@ -44,21 +63,212 @@ function AppContent() {
       <Routes>
         <Route path="/register" element={<Signup />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/entrepreneur-dashboard" element={
-          isAuthenticated && user?.role === "entrepreneur" ? <EntrepreneurDashboard /> : <Navigate to="/login" />
-        } />
-        <Route path="/investor-dashboard" element={
-          isAuthenticated && user?.role === "investor" ? <InvestorDashboard /> : <Navigate to="/login" />
-        } />
-        <Route path="/mentor-dashboard" element={
-          isAuthenticated && user?.role === "mentor" ? <MentorDashboard /> : <Navigate to="/login" />
-        } />
-        <Route path="/admin-dashboard" element={
-          isAuthenticated && user?.role === "admin" ? <AdminDashboard /> : <Navigate to="/login" />
-        } />
-        <Route path="/" element={
-          isAuthenticated ? <Navigate to={getDashboardByRole()} /> : <Dashboard />
-        } />
+        <Route
+          path="/entrepreneur-dashboard"
+          element={
+            isAuthenticated && user?.role === "entrepreneur" ? (
+              <EntrepreneurDashboard />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/investor-dashboard"
+          element={
+            isAuthenticated && user?.role === "investor" ? (
+              <InvestorDashboard />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/mentor-dashboard"
+          element={
+            isAuthenticated && user?.role === "mentor" ? (
+              <MentorDashboard />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/admin-dashboard"
+          element={
+            isAuthenticated && user?.role === "admin" ? (
+              <AdminDashboard />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/startup/create"
+          element={
+            isAuthenticated && user?.role === "entrepreneur" ? (
+              <CreateStartup />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/"
+          element={
+            isAuthenticated ? (
+              <Navigate to={getDashboardByRole()} />
+            ) : (
+              <Dashboard />
+            )
+          }
+        />
+        <Route
+          path="/startup/edit/:id"
+          element={
+            isAuthenticated && user?.role === "entrepreneur" ? (
+              <EditStartup />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/startup/mine"
+          element={
+            isAuthenticated && user?.role === "entrepreneur" ? (
+              <MyStartup />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/investor/preferences"
+          element={
+            isAuthenticated && user?.role === "investor" ? (
+              <InvestorPreferences />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/investor/startups"
+          element={
+            isAuthenticated && user?.role === "investor" ? (
+              <FindStartups />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/investor/startup/:id"
+          element={
+            isAuthenticated && user?.role === "investor" ? (
+              <StartupDetail />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+
+        <Route
+          path="/investor/nda-requests"
+          element={
+            isAuthenticated && user?.role === "investor" ? (
+              <MyNdaRequests />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/investors"
+          element={
+            isAuthenticated && user?.role === "entrepreneur" ? (
+              <FindInvestors />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+
+        <Route
+          path="/entrepreneur/find-mentors"
+          element={
+            isAuthenticated && user?.role === "entrepreneur" ? (
+              <FindMentors />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/entrepreneur/request-mentorship/:mentorId"
+          element={
+            isAuthenticated && user?.role === "entrepreneur" ? (
+              <RequestMentorship />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/entrepreneur/mentorship-requests"
+          element={
+            isAuthenticated && user?.role === "entrepreneur" ? (
+              <MyMentorshipRequests />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/mentor/requests"
+          element={
+            isAuthenticated && user?.role === "mentor" ? (
+              <PendingRequests />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/mentor/mentees"
+          element={
+            isAuthenticated && user?.role === "mentor" ? (
+              <MyMentees />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/mentor/resources"
+          element={
+            isAuthenticated && user?.role === "mentor" ? (
+              <Resources />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/mentor/profile-setup"
+          element={
+            isAuthenticated && user?.role === "mentor" ? (
+              <MentorProfileSetup />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/messages"
+          element={isAuthenticated ? <ChatPage /> : <Navigate to="/login" />}
+        />
       </Routes>
     </>
   );

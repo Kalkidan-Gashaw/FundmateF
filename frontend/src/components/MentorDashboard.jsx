@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import API from "../services/api";
 import { 
   User, 
   Users, 
@@ -14,12 +15,24 @@ import {
   GraduationCap,
   FileText,
   Video,
-  TrendingUp
+  TrendingUp,
+  Settings,
+  Heart
 } from "lucide-react";
 
 const MentorDashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [mentorProfile, setMentorProfile] = useState(null);
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [activeMentees, setActiveMentees] = useState([]);
+  const [stats, setStats] = useState({
+    pendingCount: 0,
+    activeMenteesCount: 0,
+    completedSessions: 0,
+    rating: 0
+  });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -31,13 +44,76 @@ const MentorDashboard = () => {
     }
     
     setUser(JSON.parse(userData));
+    fetchDashboardData();
   }, [navigate]);
+
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    try {
+      // Fetch mentor profile
+      const profileRes = await API.get("/mentor/profile");
+      setMentorProfile(profileRes.data.data);
+      
+      // Fetch pending requests
+      const pendingRes = await API.get("/mentor/requests");
+      setPendingRequests(pendingRes.data.data);
+      
+      // Fetch active mentees
+      const menteesRes = await API.get("/mentor/active-mentees");
+      setActiveMentees(menteesRes.data.data);
+      
+      // Calculate stats
+      setStats({
+        pendingCount: pendingRes.data.data?.length || 0,
+        activeMenteesCount: menteesRes.data.data?.length || 0,
+        completedSessions: profileRes.data.data?.totalSessions || 0,
+        rating: profileRes.data.data?.rating || 4.8
+      });
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+      // Set default stats if no profile exists
+      setStats({
+        pendingCount: 0,
+        activeMenteesCount: 0,
+        completedSessions: 0,
+        rating: 0
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     navigate("/login");
   };
+
+  const renderStars = (rating) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+    
+    for (let i = 0; i < fullStars; i++) {
+      stars.push(<Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />);
+    }
+    if (hasHalfStar) {
+      stars.push(<Star key="half" className="h-4 w-4 fill-yellow-400 text-yellow-400" />);
+    }
+    const emptyStars = 5 - stars.length;
+    for (let i = 0; i < emptyStars; i++) {
+      stars.push(<Star key={`empty-${i}`} className="h-4 w-4 text-gray-300" />);
+    }
+    return stars;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -81,7 +157,7 @@ const MentorDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm">Pending Requests</p>
-              <p className="text-2xl font-bold text-gray-900">12</p>
+              <p className="text-2xl font-bold text-yellow-600">{stats.pendingCount}</p>
             </div>
             <div className="p-3 bg-yellow-100 rounded-full">
               <Clock className="h-6 w-6 text-yellow-600" />
@@ -92,7 +168,7 @@ const MentorDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm">Active Mentees</p>
-              <p className="text-2xl font-bold text-gray-900">8</p>
+              <p className="text-2xl font-bold text-green-600">{stats.activeMenteesCount}</p>
             </div>
             <div className="p-3 bg-green-100 rounded-full">
               <Users className="h-6 w-6 text-green-600" />
@@ -103,7 +179,7 @@ const MentorDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm">Completed Sessions</p>
-              <p className="text-2xl font-bold text-gray-900">24</p>
+              <p className="text-2xl font-bold text-blue-600">{stats.completedSessions}</p>
             </div>
             <div className="p-3 bg-blue-100 rounded-full">
               <CheckCircle className="h-6 w-6 text-blue-600" />
@@ -114,7 +190,7 @@ const MentorDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm">Rating</p>
-              <p className="text-2xl font-bold text-gray-900">4.8</p>
+              <p className="text-2xl font-bold text-purple-600">{stats.rating.toFixed(1)}</p>
             </div>
             <div className="p-3 bg-purple-100 rounded-full">
               <Star className="h-6 w-6 text-purple-600" />
@@ -129,54 +205,71 @@ const MentorDashboard = () => {
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
             <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-              <GraduationCap className="h-5 w-5 text-purple-600 mr-2" />
+              <Settings className="h-5 w-5 text-purple-600 mr-2" />
               Quick Actions
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <button className="p-4 rounded-lg border border-gray-200 hover:border-purple-500 hover:bg-purple-50 transition group text-left">
+              <button 
+                onClick={() => navigate("/mentor/requests")}
+                className="p-4 rounded-lg border border-gray-200 hover:border-purple-500 hover:bg-purple-50 transition group text-left"
+              >
                 <div className="flex items-center">
                   <div className="p-3 bg-purple-100 rounded-lg mr-4 group-hover:bg-purple-200">
                     <Clock className="h-6 w-6 text-purple-600" />
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">View Pending Requests</p>
+                    <p className="font-medium text-gray-900">Pending Requests</p>
                     <p className="text-sm text-gray-500">Review mentorship requests</p>
+                    {stats.pendingCount > 0 && (
+                      <span className="inline-block mt-1 px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">
+                        {stats.pendingCount} new
+                      </span>
+                    )}
                   </div>
                 </div>
               </button>
 
-              <button className="p-4 rounded-lg border border-gray-200 hover:border-green-500 hover:bg-green-50 transition group text-left">
+              <button 
+                onClick={() => navigate("/mentor/my-mentees")}
+                className="p-4 rounded-lg border border-gray-200 hover:border-green-500 hover:bg-green-50 transition group text-left"
+              >
                 <div className="flex items-center">
                   <div className="p-3 bg-green-100 rounded-lg mr-4 group-hover:bg-green-200">
                     <Users className="h-6 w-6 text-green-600" />
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">View Assigned Mentees</p>
+                    <p className="font-medium text-gray-900">My Mentees</p>
                     <p className="text-sm text-gray-500">Manage your mentees</p>
                   </div>
                 </div>
               </button>
 
-              <button className="p-4 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition group text-left">
+              <button 
+                onClick={() => navigate("/mentor/profile-setup")}
+                className="p-4 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition group text-left"
+              >
                 <div className="flex items-center">
                   <div className="p-3 bg-blue-100 rounded-lg mr-4 group-hover:bg-blue-200">
-                    <Calendar className="h-6 w-6 text-blue-600" />
+                    <User className="h-6 w-6 text-blue-600" />
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">Set Schedule</p>
-                    <p className="text-sm text-gray-500">Update your availability</p>
+                    <p className="font-medium text-gray-900">Profile Setup</p>
+                    <p className="text-sm text-gray-500">Update your mentor profile</p>
                   </div>
                 </div>
               </button>
 
-              <button className="p-4 rounded-lg border border-gray-200 hover:border-yellow-500 hover:bg-yellow-50 transition group text-left">
+              <button 
+                onClick={() => navigate("/mentor/resources")}
+                className="p-4 rounded-lg border border-gray-200 hover:border-yellow-500 hover:bg-yellow-50 transition group text-left"
+              >
                 <div className="flex items-center">
                   <div className="p-3 bg-yellow-100 rounded-lg mr-4 group-hover:bg-yellow-200">
-                    <FileText className="h-6 w-6 text-yellow-600" />
+                    <BookOpen className="h-6 w-6 text-yellow-600" />
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">Share Resources</p>
-                    <p className="text-sm text-gray-500">Upload learning materials</p>
+                    <p className="font-medium text-gray-900">Resources</p>
+                    <p className="text-sm text-gray-500">Share learning materials</p>
                   </div>
                 </div>
               </button>
@@ -185,35 +278,108 @@ const MentorDashboard = () => {
 
           {/* Recent Mentorship Requests */}
           <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Recent Mentorship Requests</h2>
-            <div className="space-y-4">
-              {[
-                { id: 1, name: "Sarah Johnson", startup: "AI HealthTech", request: "Pitch deck review", time: "2 hours ago", status: "pending" },
-                { id: 2, name: "Michael Chen", startup: "Clean Energy", request: "Business strategy", time: "1 day ago", status: "pending" },
-                { id: 3, name: "Emma Davis", startup: "FinTech Platform", request: "Funding advice", time: "2 days ago", status: "accepted" },
-              ].map((request) => (
-                <div key={request.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition">
-                  <div className="flex items-center">
-                    <div className="p-2 bg-purple-100 rounded-lg mr-3">
-                      <User className="h-4 w-4 text-purple-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{request.name}</p>
-                      <p className="text-sm text-gray-500">{request.startup} - {request.request}</p>
-                      <p className="text-xs text-gray-400">{request.time}</p>
-                    </div>
-                  </div>
-                  <div className="flex space-x-2">
-                    <button className="px-3 py-1 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition">
-                      Accept
-                    </button>
-                    <button className="px-3 py-1 bg-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-400 transition">
-                      Decline
-                    </button>
-                  </div>
-                </div>
-              ))}
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center">
+                <MessageSquare className="h-5 w-5 text-purple-600 mr-2" />
+                Recent Mentorship Requests
+              </h2>
+              {pendingRequests.length > 0 && (
+                <button 
+                  onClick={() => navigate("/mentor/requests")}
+                  className="text-sm text-purple-600 hover:text-purple-700"
+                >
+                  View all →
+                </button>
+              )}
             </div>
+            {pendingRequests.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-gray-100 rounded-full mb-3">
+                  <MessageSquare className="h-6 w-6 text-gray-400" />
+                </div>
+                <p className="text-gray-500">No pending requests</p>
+                <p className="text-sm text-gray-400">New requests will appear here</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {pendingRequests.slice(0, 3).map((request) => (
+                  <div key={request.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition">
+                    <div className="flex items-center">
+                      <div className="p-2 bg-purple-100 rounded-lg mr-3">
+                        <User className="h-4 w-4 text-purple-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{request.entrepreneur?.name}</p>
+                        <p className="text-sm text-gray-500">{request.topic}</p>
+                        <p className="text-xs text-gray-400">
+                          {new Date(request.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => navigate("/mentor/requests")}
+                      className="px-3 py-1 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition"
+                    >
+                      Review
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Active Mentees Section */}
+          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center">
+                <Heart className="h-5 w-5 text-green-600 mr-2" />
+                Active Mentees
+              </h2>
+              {activeMentees.length > 0 && (
+                <button 
+                  onClick={() => navigate("/mentor/my-mentees")}
+                  className="text-sm text-purple-600 hover:text-purple-700"
+                >
+                  View all →
+                </button>
+              )}
+            </div>
+            {activeMentees.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-gray-100 rounded-full mb-3">
+                  <Users className="h-6 w-6 text-gray-400" />
+                </div>
+                <p className="text-gray-500">No active mentees</p>
+                <p className="text-sm text-gray-400">Accepted requests will appear here</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {activeMentees.slice(0, 3).map((mentee) => (
+                  <div key={mentee.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition">
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-teal-600 rounded-full flex items-center justify-center text-white font-bold">
+                        {mentee.entrepreneur?.name?.charAt(0) || "E"}
+                      </div>
+                      <div className="ml-3">
+                        <p className="font-medium text-gray-900">{mentee.entrepreneur?.name}</p>
+                        <p className="text-sm text-gray-500">{mentee.topic}</p>
+                        {mentee.scheduledDate && (
+                          <p className="text-xs text-green-600">
+                            Next: {new Date(mentee.scheduledDate).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => navigate("/mentor/my-mentees")}
+                      className="text-purple-600 hover:text-purple-700 text-sm"
+                    >
+                      Manage →
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -232,15 +398,45 @@ const MentorDashboard = () => {
                 </span>
               </div>
             </div>
+            
+            {/* Expertise Areas */}
+            {mentorProfile?.expertise && mentorProfile.expertise.length > 0 && (
+              <div className="mb-4">
+                <p className="text-sm text-gray-500 mb-2">Expertise:</p>
+                <div className="flex flex-wrap gap-1">
+                  {mentorProfile.expertise.slice(0, 3).map((exp) => (
+                    <span key={exp} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                      {exp}
+                    </span>
+                  ))}
+                  {mentorProfile.expertise.length > 3 && (
+                    <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                      +{mentorProfile.expertise.length - 3}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-gray-600">Member Since</span>
-                <span className="font-medium">March 2025</span>
+                <span className="font-medium">
+                  {new Date(user?.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Expertise Areas</span>
-                <span className="font-medium">Tech, Finance, Marketing</span>
-              </div>
+              {mentorProfile?.currentRole && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Current Role</span>
+                  <span className="font-medium">{mentorProfile.currentRole}</span>
+                </div>
+              )}
+              {mentorProfile?.company && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Company</span>
+                  <span className="font-medium">{mentorProfile.company}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-gray-600">Response Rate</span>
                 <span className="font-medium text-green-600">95%</span>
@@ -249,8 +445,24 @@ const MentorDashboard = () => {
                 <div className="bg-green-600 h-2 rounded-full" style={{ width: "95%" }}></div>
               </div>
             </div>
-            <button className="mt-6 w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition">
-              Update Profile
+            
+            {mentorProfile?.isAvailable ? (
+              <div className="mt-4 p-2 bg-green-100 text-green-700 rounded-lg text-center text-sm">
+                <CheckCircle className="h-4 w-4 inline mr-1" />
+                Available for mentorship
+              </div>
+            ) : (
+              <div className="mt-4 p-2 bg-gray-100 text-gray-500 rounded-lg text-center text-sm">
+                <Clock className="h-4 w-4 inline mr-1" />
+                Currently unavailable
+              </div>
+            )}
+            
+            <button 
+              onClick={() => navigate("/mentor/profile-setup")}
+              className="mt-4 w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition"
+            >
+              Edit Profile
             </button>
           </div>
 
@@ -260,54 +472,56 @@ const MentorDashboard = () => {
               <Calendar className="h-5 w-5 text-purple-600 mr-2" />
               Upcoming Sessions
             </h2>
-            <div className="space-y-3">
-              <div className="p-3 bg-purple-50 rounded-lg">
-                <p className="font-medium text-gray-900">Mentorship with Sarah</p>
-                <p className="text-sm text-gray-500">Today, 3:00 PM</p>
-                <div className="flex items-center mt-2 text-sm text-purple-600">
-                  <Video className="h-4 w-4 mr-1" />
-                  <span>Video Call</span>
-                </div>
+            {activeMentees.filter(m => m.scheduledDate && new Date(m.scheduledDate) > new Date()).length === 0 ? (
+              <div className="text-center py-4">
+                <Calendar className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                <p className="text-gray-500 text-sm">No upcoming sessions</p>
               </div>
-              <div className="p-3 bg-blue-50 rounded-lg">
-                <p className="font-medium text-gray-900">Strategy Session with Michael</p>
-                <p className="text-sm text-gray-500">Tomorrow, 11:00 AM</p>
-                <div className="flex items-center mt-2 text-sm text-blue-600">
-                  <MessageSquare className="h-4 w-4 mr-1" />
-                  <span>Chat Session</span>
-                </div>
+            ) : (
+              <div className="space-y-3">
+                {activeMentees
+                  .filter(m => m.scheduledDate && new Date(m.scheduledDate) > new Date())
+                  .slice(0, 3)
+                  .map((mentee) => (
+                    <div key={mentee.id} className="p-3 bg-purple-50 rounded-lg">
+                      <p className="font-medium text-gray-900">
+                        Mentorship with {mentee.entrepreneur?.name}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {new Date(mentee.scheduledDate).toLocaleString()}
+                      </p>
+                      {mentee.meetingLink && (
+                        <div className="flex items-center mt-2 text-sm text-purple-600">
+                          <Video className="h-4 w-4 mr-1" />
+                          <a href={mentee.meetingLink} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                            Join Meeting
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  ))}
               </div>
-              <div className="p-3 bg-green-50 rounded-lg">
-                <p className="font-medium text-gray-900">Pitch Review with Emma</p>
-                <p className="text-sm text-gray-500">In 2 days, 2:00 PM</p>
-                <div className="flex items-center mt-2 text-sm text-green-600">
-                  <Video className="h-4 w-4 mr-1" />
-                  <span>Video Call</span>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
 
-          {/* Popular Resources */}
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
-              <BookOpen className="h-5 w-5 text-purple-600 mr-2" />
-              Popular Resources
-            </h2>
-            <div className="space-y-3">
-              <div className="flex items-center p-2 hover:bg-gray-50 rounded-lg transition">
-                <FileText className="h-4 w-4 text-gray-400 mr-2" />
-                <span className="text-sm text-gray-700">Startup Pitch Deck Template</span>
-                <TrendingUp className="h-4 w-4 text-green-500 ml-auto" />
+          {/* Quick Stats */}
+          <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6">
+            <h3 className="font-bold text-gray-900 mb-3">Mentor Impact</h3>
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Total Sessions</span>
+                <span className="font-bold text-purple-600">{stats.completedSessions}</span>
               </div>
-              <div className="flex items-center p-2 hover:bg-gray-50 rounded-lg transition">
-                <FileText className="h-4 w-4 text-gray-400 mr-2" />
-                <span className="text-sm text-gray-700">Business Model Canvas Guide</span>
-                <TrendingUp className="h-4 w-4 text-green-500 ml-auto" />
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Active Mentees</span>
+                <span className="font-bold text-purple-600">{stats.activeMenteesCount}</span>
               </div>
-              <div className="flex items-center p-2 hover:bg-gray-50 rounded-lg transition">
-                <FileText className="h-4 w-4 text-gray-400 mr-2" />
-                <span className="text-sm text-gray-700">Fundraising Strategy PDF</span>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Average Rating</span>
+                <div className="flex items-center">
+                  {renderStars(stats.rating)}
+                  <span className="ml-1 font-bold text-purple-600">{stats.rating.toFixed(1)}</span>
+                </div>
               </div>
             </div>
           </div>

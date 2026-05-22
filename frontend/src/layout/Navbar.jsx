@@ -1,7 +1,26 @@
 import { useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import { Briefcase, LogOut, User, Menu, X, LayoutDashboard, PlusCircle, FolderOpen, Inbox, Settings, Users, Search, GraduationCap, Shield } from "lucide-react";
+import {
+  Briefcase,
+  LogOut,
+  User,
+  Menu,
+  X,
+  PlusCircle,
+  FolderOpen,
+  Settings,
+  Users,
+  Search,
+  GraduationCap,
+  Shield,
+  FileText,
+  Clock,
+  Heart,
+  BookOpen,
+  UserCircle,
+  MessageCircle, // Add this
+} from "lucide-react";
 import { useState } from "react";
 
 const Navbar = () => {
@@ -22,56 +41,39 @@ const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition">
+          <Link
+            to="/"
+            className="flex items-center space-x-2 hover:opacity-80 transition"
+          >
             <Briefcase className="h-8 w-8 text-blue-600" />
             <span className="text-xl font-bold text-gray-900">FundMate</span>
           </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
+            {user && (
+              <Link
+                to="/messages"
+                className="text-gray-700 hover:text-blue-600 transition duration-200 font-medium flex items-center space-x-1"
+              >
+                <MessageCircle className="h-4 w-4" />
+                <span>Messages</span>
+              </Link>
+            )}
             {user ? (
               <>
-                {/* <Link
-                  to="/"
-                  className="text-gray-700 hover:text-blue-600 transition duration-200 font-medium flex items-center space-x-1"
-                >
-                  <LayoutDashboard className="h-4 w-4" />
-                  <span>Dashboard</span>
-                </Link> */}
-                
                 {userRole === "entrepreneur" && (
                   <>
-                    <Link
-                      to="/startup/create"
-                      className="text-gray-700 hover:text-blue-600 transition duration-200 font-medium flex items-center space-x-1"
-                    >
-                      <PlusCircle className="h-4 w-4" />
-                      <span>Create Startup</span>
+                    <Link to="/startup/create">Create Startup</Link>
+                    <Link to="/startup/mine">My Startup</Link>
+                    <Link to="/entrepreneur/find-mentors">Find Mentors</Link>
+                    <Link to="/entrepreneur/mentorship-requests">
+                      My Mentorship
                     </Link>
-                    <Link
-                      to="/startup/mine"
-                      className="text-gray-700 hover:text-blue-600 transition duration-200 font-medium flex items-center space-x-1"
-                    >
-                      <FolderOpen className="h-4 w-4" />
-                      <span>My Startup</span>
-                    </Link>
-                    <Link
-                      to="/connections/incoming"
-                      className="text-gray-700 hover:text-blue-600 transition duration-200 font-medium flex items-center space-x-1"
-                    >
-                      <Inbox className="h-4 w-4" />
-                      <span>Requests</span>
-                    </Link>
-                    <Link
-                      to="/investors"
-                      className="text-gray-700 hover:text-blue-600 transition duration-200 font-medium flex items-center space-x-1"
-                    >
-                      <Users className="h-4 w-4" />
-                      <span>Find Investors</span>
-                    </Link>
+                    <Link to="/investors">Find Investors</Link>
                   </>
                 )}
-                
+
                 {userRole === "investor" && (
                   <>
                     <Link
@@ -82,22 +84,29 @@ const Navbar = () => {
                       <span>Preferences</span>
                     </Link>
                     <Link
-                      to="/investor/matches"
+                      to="/investor/startups"
                       className="text-gray-700 hover:text-blue-600 transition duration-200 font-medium flex items-center space-x-1"
                     >
                       <Search className="h-4 w-4" />
                       <span>Find Startups</span>
                     </Link>
+                    <Link
+                      to="/investor/nda-requests"
+                      className="text-gray-700 hover:text-blue-600 transition duration-200 font-medium flex items-center space-x-1"
+                    >
+                      <FileText className="h-4 w-4" />
+                      <span>My NDA Requests</span>
+                    </Link>
                   </>
                 )}
-                
+
                 {userRole === "mentor" && (
                   <>
                     <Link
                       to="/mentor/requests"
                       className="text-gray-700 hover:text-blue-600 transition duration-200 font-medium flex items-center space-x-1"
                     >
-                      <Inbox className="h-4 w-4" />
+                      <Clock className="h-4 w-4" />
                       <span>Requests</span>
                     </Link>
                     <Link
@@ -111,12 +120,19 @@ const Navbar = () => {
                       to="/mentor/resources"
                       className="text-gray-700 hover:text-blue-600 transition duration-200 font-medium flex items-center space-x-1"
                     >
-                      <GraduationCap className="h-4 w-4" />
+                      <BookOpen className="h-4 w-4" />
                       <span>Resources</span>
+                    </Link>
+                    <Link
+                      to="/mentor/profile-setup"
+                      className="text-gray-700 hover:text-blue-600 transition duration-200 font-medium flex items-center space-x-1"
+                    >
+                      <UserCircle className="h-4 w-4" />
+                      <span>Profile Setup</span>
                     </Link>
                   </>
                 )}
-                
+
                 {userRole === "admin" && (
                   <>
                     <Link
@@ -135,16 +151,20 @@ const Navbar = () => {
                     </Link>
                   </>
                 )}
-                
+
                 <div className="flex items-center space-x-4 ml-4 pl-4 border-l border-gray-200">
                   <div className="flex items-center space-x-2">
                     <div className="h-8 w-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
                       <User className="h-4 w-4 text-white" />
                     </div>
                     <div className="text-sm">
-                      <p className="font-medium text-gray-900">{userName || "User"}</p>
+                      <p className="font-medium text-gray-900">
+                        {userName || "User"}
+                      </p>
                       {userRole && (
-                        <p className="text-gray-500 text-xs capitalize">{userRole}</p>
+                        <p className="text-gray-500 text-xs capitalize">
+                          {userRole}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -180,7 +200,11 @@ const Navbar = () => {
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="md:hidden p-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-gray-100 transition duration-200"
           >
-            {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            {isMenuOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
           </button>
         </div>
 
@@ -194,13 +218,17 @@ const Navbar = () => {
                     <User className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">{userName || "User"}</p>
+                    <p className="font-medium text-gray-900">
+                      {userName || "User"}
+                    </p>
                     {userRole && (
-                      <p className="text-sm text-gray-500 capitalize">{userRole}</p>
+                      <p className="text-sm text-gray-500 capitalize">
+                        {userRole}
+                      </p>
                     )}
                   </div>
                 </div>
-                
+
                 <Link
                   to="/"
                   className="block py-2 text-gray-700 hover:text-blue-600 transition duration-200"
@@ -208,7 +236,7 @@ const Navbar = () => {
                 >
                   Dashboard
                 </Link>
-                
+
                 {userRole === "entrepreneur" && (
                   <>
                     <Link
@@ -225,15 +253,9 @@ const Navbar = () => {
                     >
                       My Startup
                     </Link>
+
                     <Link
-                      to="/connections/incoming"
-                      className="block py-2 text-gray-700 hover:text-blue-600 transition duration-200"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Requests
-                    </Link>
-                    <Link
-                      to="/investor-dashboard"
+                      to="/investors"
                       className="block py-2 text-gray-700 hover:text-blue-600 transition duration-200"
                       onClick={() => setIsMenuOpen(false)}
                     >
@@ -241,7 +263,7 @@ const Navbar = () => {
                     </Link>
                   </>
                 )}
-                
+
                 {userRole === "investor" && (
                   <>
                     <Link
@@ -252,15 +274,22 @@ const Navbar = () => {
                       Preferences
                     </Link>
                     <Link
-                      to="/investor/matches"
+                      to="/investor/startups"
                       className="block py-2 text-gray-700 hover:text-blue-600 transition duration-200"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       Find Startups
                     </Link>
+                    <Link
+                      to="/investor/nda-requests"
+                      className="block py-2 text-gray-700 hover:text-blue-600 transition duration-200"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      My NDA Requests
+                    </Link>
                   </>
                 )}
-                
+
                 {userRole === "mentor" && (
                   <>
                     <Link
@@ -284,9 +313,15 @@ const Navbar = () => {
                     >
                       Resources
                     </Link>
+                    <Link
+                      to="/mentor/profile-setup"
+                      className="block py-2 text-gray-700 hover:text-blue-600 transition duration-200"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Profile Setup
+                    </Link>
                   </>
                 )}
-                
                 {userRole === "admin" && (
                   <>
                     <Link
@@ -305,7 +340,7 @@ const Navbar = () => {
                     </Link>
                   </>
                 )}
-                
+
                 <button
                   onClick={handleLogout}
                   className="w-full flex items-center justify-center space-x-2 py-3 text-red-600 hover:text-red-700 border-t border-gray-100 mt-4"
