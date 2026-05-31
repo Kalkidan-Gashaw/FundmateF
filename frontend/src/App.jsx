@@ -39,6 +39,7 @@ import NotificationsPage from "./components/common/NotificationsPage";
 import AdminSettings from "./components/admin/AdminSettings";
 import EntrepreneurNdaRequests from "./components/entrepreneur/EntreprenuerNdaRequests";
 import VerifyEmail from "./components/auth/VerifyEmail";
+import FloatingAssistant from "./components/FloatingAssistant";
 
 function AppContent() {
   const { user, loading } = useContext(AuthContext);

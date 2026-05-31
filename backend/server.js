@@ -15,7 +15,7 @@ import resourceRoutes from "./routes/resourceRoutes.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import adminRoutes from "./routes/adminRoutes.js";
-
+import aiRoutes from "./Routes/aiRoutes.js";
 
 
 dotenv.config();
@@ -133,7 +133,7 @@ app.use("/api/admin", adminRoutes);
 import notificationRoutes from "./routes/notificationRoutes.js";
 
 app.use("/api/notifications", notificationRoutes);
-
+app.use("/api/ai", aiRoutes);
 // Test route
 app.get("/", (req, res) => {
   res.json({ message: "FundMate API is running" });

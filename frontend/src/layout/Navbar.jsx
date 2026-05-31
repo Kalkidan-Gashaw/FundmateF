@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import API from "../services/api";
 import NotificationBell from "../components/common/NotificationBell";
+import FloatingAssistant from "../components/FloatingAssistant";
 import {
   Briefcase,
   LogOut,
@@ -215,7 +216,7 @@ const Navbar = () => {
                 <div className="flex items-center space-x-4 ml-4 pl-4 border-l border-gray-200">
                   {/* Notification Bell - Only for non-admin users */}
                   {userRole !== "admin" && <NotificationBell />}
-                  
+
                   <div className="flex items-center space-x-2">
                     <div className="h-8 w-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
                       <User className="h-4 w-4 text-white" />
@@ -486,6 +487,7 @@ const Navbar = () => {
           </div>
         )}
       </div>
+      <FloatingAssistant />
     </nav>
   );
 };
