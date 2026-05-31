@@ -1,6 +1,5 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/database.js";
-import User from "./User.js";
 
 const Message = sequelize.define("Message", {
   id: {
@@ -26,18 +25,34 @@ const Message = sequelize.define("Message", {
   },
   message: {
     type: DataTypes.TEXT,
-    allowNull: false,
+    allowNull: true,
+  },
+  fileUrl: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  fileName: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  fileSize: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
+  fileType: {
+    type: DataTypes.STRING,
+    allowNull: true,
   },
   isRead: {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
   },
+  isEdited: {
+  type: DataTypes.BOOLEAN,
+  defaultValue: false,
+},
 }, {
   timestamps: true,
 });
-
-// Add associations
-Message.belongsTo(User, { as: "sender", foreignKey: "senderId" });
-Message.belongsTo(User, { as: "receiver", foreignKey: "receiverId" });
 
 export default Message;

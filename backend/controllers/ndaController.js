@@ -229,3 +229,140 @@ export const getAllNDAs = async (req, res) => {
     });
   }
 };
+// Get NDA requests for entrepreneur's startup
+export const getEntrepreneurRequests = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Get entrepreneur's startup
+    const startup = await StartupProfile.findOne({ where: { userId } });
+    
+    if (!startup) {
+      return res.status(404).json({
+        success: false,
+        message: "Startup not found",
+      });
+    }
+    
+    const requests = await NDA.findAll({
+      where: {
+        startupId: startup.id,
+      },
+      include: [
+        {
+          model: User,
+          as: "investor",
+          attributes: ["id", "name", "email"],
+        },
+      ],
+      order: [["createdAt", "DESC"]],
+    });
+    
+    res.status(200).json({
+      success: true,
+      data: requests,
+    });
+  } catch (error) {
+    console.error("Error fetching entrepreneur requests:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// Entrepreneur approves NDA request
+export const approveRequest = async (req, res) => {
+  try {
+    const { ndaId } = req.params;
+    const { responseMessage } = req.body;
+    const userId = req.user.id;
+    
+    const ndaRequest = await NDA.findOne({
+      where: { id: ndaId },
+      include: [{ model: StartupProfile, as: "ndaStartup" }],
+    });
+    
+    if (!ndaRequest) {
+      return res.status(404).json({
+        success: false,
+        message: "Request not found",
+      });
+    }
+    
+    // Verify the startup belongs to this entrepreneur
+    const startup = await StartupProfile.findOne({ where: { userId } });
+    if (ndaRequest.startupId !== startup?.id) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized",
+      });
+    }
+    
+    await ndaRequest.update({
+      status: "approved",
+      startupResponseMessage: responseMessage,
+    });
+    
+    res.status(200).json({
+      success: true,
+      message: "Access request approved. Investor can now sign the NDA.",
+      data: ndaRequest,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// Entrepreneur rejects NDA request
+export const rejectRequest = async (req, res) => {
+  try {
+    const { ndaId } = req.params;
+    const { responseMessage } = req.body;
+    const userId = req.user.id;
+    
+    const ndaRequest = await NDA.findOne({
+      where: { id: ndaId },
+      include: [{ model: StartupProfile, as: "ndaStartup" }],
+    });
+    
+    if (!ndaRequest) {
+      return res.status(404).json({
+        success: false,
+        message: "Request not found",
+      });
+    }
+    
+    // Verify the startup belongs to this entrepreneur
+    const startup = await StartupProfile.findOne({ where: { userId } });
+    if (ndaRequest.startupId !== startup?.id) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized",
+      });
+    }
+    
+    await ndaRequest.update({
+      status: "rejected",
+      startupResponseMessage: responseMessage,
+    });
+    
+    res.status(200).json({
+      success: true,
+      message: "Access request rejected",
+      data: ndaRequest,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+

@@ -7,7 +7,9 @@ import NDA from "./NDA.js";
 import MentorProfile from "./MentorProfile.js";
 import MentorshipRequest from "./MentorshipRequest.js";
 import Message from "./Message.js";
-
+import Resource from "./Resource.js";
+import Broadcast from "./Broadcast.js";
+import Setting from "./Setting.js";
 // Define associations
 
 // User to StartupProfile
@@ -42,6 +44,18 @@ MentorshipRequest.belongsTo(User, { as: "mentor", foreignKey: "mentorId" });
 MentorshipRequest.belongsTo(StartupProfile, { as: "relatedStartup", foreignKey: "startupId" });
 StartupProfile.hasMany(MentorshipRequest, { as: "mentorshipRequests", foreignKey: "startupId" });
 
+Resource.belongsTo(User, { as: "author", foreignKey: "authorId" });
+User.hasMany(Resource, { as: "resources", foreignKey: "authorId" });
+
+Message.belongsTo(User, { as: "sender", foreignKey: "senderId" });
+Message.belongsTo(User, { as: "receiver", foreignKey: "receiverId" });
+User.hasMany(Message, { as: "sentMessages", foreignKey: "senderId" });
+User.hasMany(Message, { as: "receivedMessages", foreignKey: "receiverId" });
+
+Broadcast.belongsTo(User, { as: "sender", foreignKey: "sentBy" });
+User.hasMany(Broadcast, { as: "broadcasts", foreignKey: "sentBy" });
+
+
 export {
   sequelize,
   User,
@@ -52,4 +66,7 @@ export {
   MentorProfile,
   MentorshipRequest,
   Message,
+  Resource,
+  Broadcast,
+  Setting,
 };

@@ -9,7 +9,7 @@ import InvestorPreferences from "./components/investor/InvestorPreferences";
 import EntrepreneurDashboard from "./components/EntrepreneurDashboard";
 import InvestorDashboard from "./components/investor/InvestorDashboard";
 import MentorDashboard from "./components/MentorDashboard";
-import AdminDashboard from "./components/AdminDashboard";
+
 import CreateStartup from "./components/entrepreneur/CreateStartup";
 import EditStartup from "./components/entrepreneur/EditStartup";
 import MyStartup from "./components/entrepreneur/MyStartup";
@@ -28,6 +28,17 @@ import PendingRequests from "./components/mentor/PendingRequests";
 import MyMentees from "./components/mentor/MyMentees";
 import Resources from "./components/mentor/Resources";
 import ChatPage from "./components/chat/ChatPage";
+import AdminDashboard from "./components/admin/AdminDashboard";
+import AdminStartups from "./components/admin/AdminStartups";
+import AdminNDAs from "./components/admin/AdminNDAs";
+import AdminAnalytics from "./components/admin/AdminAnalytics";
+import AdminMentorships from "./components/admin/AdminMentorships";
+import AdminBroadcast from "./components/admin/AdminBroadcast";
+
+import NotificationsPage from "./components/common/NotificationsPage";
+import AdminSettings from "./components/admin/AdminSettings";
+import EntrepreneurNdaRequests from "./components/entrepreneur/EntreprenuerNdaRequests";
+import VerifyEmail from "./components/auth/VerifyEmail";
 
 function AppContent() {
   const { user, loading } = useContext(AuthContext);
@@ -63,6 +74,8 @@ function AppContent() {
       <Routes>
         <Route path="/register" element={<Signup />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/verify-email/:token" element={<VerifyEmail />} />
+
         <Route
           path="/entrepreneur-dashboard"
           element={
@@ -93,16 +106,7 @@ function AppContent() {
             )
           }
         />
-        <Route
-          path="/admin-dashboard"
-          element={
-            isAuthenticated && user?.role === "admin" ? (
-              <AdminDashboard />
-            ) : (
-              <Navigate to="/login" />
-            )
-          }
-        />
+
         <Route
           path="/startup/create"
           element={
@@ -206,6 +210,16 @@ function AppContent() {
           }
         />
         <Route
+          path="/entrepreneur/nda-requests"
+          element={
+            isAuthenticated && user?.role === "entrepreneur" ? (
+              <EntrepreneurNdaRequests />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
           path="/entrepreneur/request-mentorship/:mentorId"
           element={
             isAuthenticated && user?.role === "entrepreneur" ? (
@@ -268,6 +282,83 @@ function AppContent() {
         <Route
           path="/messages"
           element={isAuthenticated ? <ChatPage /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/admin-dashboard"
+          element={
+            isAuthenticated && user?.role === "admin" ? (
+              <AdminDashboard />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/admin/startups"
+          element={
+            isAuthenticated && user?.role === "admin" ? (
+              <AdminStartups />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/admin/ndas"
+          element={
+            isAuthenticated && user?.role === "admin" ? (
+              <AdminNDAs />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+
+        <Route
+          path="/admin/analytics"
+          element={
+            isAuthenticated && user?.role === "admin" ? (
+              <AdminAnalytics />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/admin/mentorships"
+          element={
+            isAuthenticated && user?.role === "admin" ? (
+              <AdminMentorships />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/admin/broadcast"
+          element={
+            isAuthenticated && user?.role === "admin" ? (
+              <AdminBroadcast />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/notifications"
+          element={
+            isAuthenticated ? <NotificationsPage /> : <Navigate to="/login" />
+          }
+        />
+        <Route
+          path="/admin/settings"
+          element={
+            isAuthenticated && user?.role === "admin" ? (
+              <AdminSettings />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
         />
       </Routes>
     </>

@@ -1,6 +1,8 @@
-import { useContext } from "react";
+import { useContext, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+import API from "../services/api";
+import NotificationBell from "../components/common/NotificationBell";
 import {
   Briefcase,
   LogOut,
@@ -19,22 +21,40 @@ import {
   Heart,
   BookOpen,
   UserCircle,
-  MessageCircle, // Add this
+  MessageCircle,
+  Building2,
 } from "lucide-react";
-import { useState } from "react";
 
 const Navbar = () => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const userName = user?.name || "";
+  const userRole = user?.role || "";
+
+  // Fetch unread message count
+  useEffect(() => {
+    if (user && userRole !== "admin") {
+      const fetchUnreadCount = async () => {
+        try {
+          const response = await API.get("/chat/unread-count");
+          setUnreadCount(response.data.data.unreadCount);
+        } catch (error) {
+          console.error("Error fetching unread count:", error);
+        }
+      };
+      fetchUnreadCount();
+      const interval = setInterval(fetchUnreadCount, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [user, userRole]);
 
   const handleLogout = () => {
     logout();
     navigate("/login");
   };
-
-  const userName = user?.name || "";
-  const userRole = user?.role || "";
 
   return (
     <nav className="bg-white shadow-lg border-b border-gray-100 sticky top-0 z-50">
@@ -51,13 +71,18 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            {user && (
+            {user && userRole !== "admin" && (
               <Link
                 to="/messages"
-                className="text-gray-700 hover:text-blue-600 transition duration-200 font-medium flex items-center space-x-1"
+                className="text-gray-700 hover:text-blue-600 transition duration-200 font-medium flex items-center space-x-1 relative"
               >
                 <MessageCircle className="h-4 w-4" />
                 <span>Messages</span>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
               </Link>
             )}
             {user ? (
@@ -136,23 +161,61 @@ const Navbar = () => {
                 {userRole === "admin" && (
                   <>
                     <Link
-                      to="/admin/users"
-                      className="text-gray-700 hover:text-blue-600 transition duration-200 font-medium flex items-center space-x-1"
-                    >
-                      <Users className="h-4 w-4" />
-                      <span>Users</span>
-                    </Link>
-                    <Link
-                      to="/admin/reports"
+                      to="/admin-dashboard"
                       className="text-gray-700 hover:text-blue-600 transition duration-200 font-medium flex items-center space-x-1"
                     >
                       <Shield className="h-4 w-4" />
-                      <span>Reports</span>
+                      <span>Dashboard</span>
+                    </Link>
+                    <Link
+                      to="/admin/startups"
+                      className="text-gray-700 hover:text-blue-600 transition duration-200 font-medium flex items-center space-x-1"
+                    >
+                      <Building2 className="h-4 w-4" />
+                      <span>Startups</span>
+                    </Link>
+                    <Link
+                      to="/admin/ndas"
+                      className="text-gray-700 hover:text-blue-600 transition duration-200 font-medium flex items-center space-x-1"
+                    >
+                      <FileText className="h-4 w-4" />
+                      <span>NDAs</span>
+                    </Link>
+                    <Link
+                      to="/admin/analytics"
+                      className="text-gray-700 hover:text-blue-600 transition duration-200 font-medium flex items-center space-x-1"
+                    >
+                      <FileText className="h-4 w-4" />
+                      <span>Analytics</span>
+                    </Link>
+                    <Link
+                      to="/admin/mentorships"
+                      className="text-gray-700 hover:text-blue-600 transition duration-200 font-medium flex items-center space-x-1"
+                    >
+                      <FileText className="h-4 w-4" />
+                      <span>Mentorships</span>
+                    </Link>
+                    <Link
+                      to="/admin/broadcast"
+                      className="text-gray-700 hover:text-blue-600 transition duration-200 font-medium flex items-center space-x-1"
+                    >
+                      <FileText className="h-4 w-4" />
+                      <span>Broadcast</span>
+                    </Link>
+                    <Link
+                      to="/admin/settings"
+                      className="text-gray-700 hover:text-blue-600 transition duration-200 font-medium flex items-center space-x-1"
+                    >
+                      <FileText className="h-4 w-4" />
+                      <span>Settings</span>
                     </Link>
                   </>
                 )}
 
                 <div className="flex items-center space-x-4 ml-4 pl-4 border-l border-gray-200">
+                  {/* Notification Bell - Only for non-admin users */}
+                  {userRole !== "admin" && <NotificationBell />}
+                  
                   <div className="flex items-center space-x-2">
                     <div className="h-8 w-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
                       <User className="h-4 w-4 text-white" />
@@ -236,6 +299,25 @@ const Navbar = () => {
                 >
                   Dashboard
                 </Link>
+
+                {/* Mobile Messages with Badge - Only for non-admin */}
+                {userRole !== "admin" && (
+                  <Link
+                    to="/messages"
+                    className="flex items-center justify-between py-2 text-gray-700 hover:text-blue-600 transition duration-200"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <MessageCircle className="h-5 w-5" />
+                      <span>Messages</span>
+                    </div>
+                    {unreadCount > 0 && (
+                      <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5 min-w-[20px] text-center">
+                        {unreadCount > 99 ? "99+" : unreadCount}
+                      </span>
+                    )}
+                  </Link>
+                )}
 
                 {userRole === "entrepreneur" && (
                   <>
@@ -325,22 +407,56 @@ const Navbar = () => {
                 {userRole === "admin" && (
                   <>
                     <Link
-                      to="/admin/users"
+                      to="/admin-dashboard"
                       className="block py-2 text-gray-700 hover:text-blue-600 transition duration-200"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      Users
+                      Dashboard
                     </Link>
                     <Link
-                      to="/admin/reports"
+                      to="/admin/startups"
                       className="block py-2 text-gray-700 hover:text-blue-600 transition duration-200"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      Reports
+                      Startups
+                    </Link>
+                    <Link
+                      to="/admin/ndas"
+                      className="block py-2 text-gray-700 hover:text-blue-600 transition duration-200"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      NDAs
+                    </Link>
+                    <Link
+                      to="/admin/analytics"
+                      className="block py-2 text-gray-700 hover:text-blue-600 transition duration-200"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Analytics
+                    </Link>
+                    <Link
+                      to="/admin/mentorships"
+                      className="block py-2 text-gray-700 hover:text-blue-600 transition duration-200"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Mentorships
+                    </Link>
+                    <Link
+                      to="/admin/broadcast"
+                      className="block py-2 text-gray-700 hover:text-blue-600 transition duration-200"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Broadcast
+                    </Link>
+                    <Link
+                      to="/admin/settings"
+                      className="block py-2 text-gray-700 hover:text-blue-600 transition duration-200"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Settings
                     </Link>
                   </>
                 )}
-
                 <button
                   onClick={handleLogout}
                   className="w-full flex items-center justify-center space-x-2 py-3 text-red-600 hover:text-red-700 border-t border-gray-100 mt-4"
