@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import API from "../services/api";
 import { 
   User, 
   Briefcase, 
@@ -13,12 +14,16 @@ import {
   TrendingUp,
   Bell,
   Calendar,
-  Star
+  Star,
+  Shield
 } from "lucide-react";
 
 const EntrepreneurDashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [hasStartup, setHasStartup] = useState(false);
+  const [startupId, setStartupId] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -30,6 +35,26 @@ const EntrepreneurDashboard = () => {
     }
     
     setUser(JSON.parse(userData));
+    
+    // Check if user has a startup
+    const checkStartup = async () => {
+      try {
+        const response = await API.get("/entrepreneur/startup");
+        if (response.data.data) {
+          setHasStartup(true);
+          setStartupId(response.data.data.id);
+        }
+      } catch (error) {
+        if (error.response?.status !== 404) {
+          console.error("Error checking startup:", error);
+        }
+        setHasStartup(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    checkStartup();
   }, [navigate]);
 
   const handleLogout = () => {
@@ -37,6 +62,14 @@ const EntrepreneurDashboard = () => {
     localStorage.removeItem("user");
     navigate("/login");
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -132,17 +165,37 @@ const EntrepreneurDashboard = () => {
               Quick Actions
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <button className="p-4 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition group text-left">
-                <div className="flex items-center">
-                  <div className="p-3 bg-blue-100 rounded-lg mr-4 group-hover:bg-blue-200">
-                    <Briefcase className="h-6 w-6 text-blue-600" />
+              {hasStartup ? (
+                <button 
+                  onClick={() => navigate(`/startup/edit/${startupId}`)}
+                  className="p-4 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition group text-left"
+                >
+                  <div className="flex items-center">
+                    <div className="p-3 bg-blue-100 rounded-lg mr-4 group-hover:bg-blue-200">
+                      <Briefcase className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">Edit Startup Profile</p>
+                      <p className="text-sm text-gray-500">Update your company details</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-gray-900">Create/Edit Profile</p>
-                    <p className="text-sm text-gray-500">Set up your startup details</p>
+                </button>
+              ) : (
+                <button 
+                  onClick={() => navigate("/startup/create")}
+                  className="p-4 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition group text-left"
+                >
+                  <div className="flex items-center">
+                    <div className="p-3 bg-blue-100 rounded-lg mr-4 group-hover:bg-blue-200">
+                      <Briefcase className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">Create Startup Profile</p>
+                      <p className="text-sm text-gray-500">Set up your startup details</p>
+                    </div>
                   </div>
-                </div>
-              </button>
+                </button>
+              )}
 
               <button className="p-4 rounded-lg border border-gray-200 hover:border-green-500 hover:bg-green-50 transition group text-left">
                 <div className="flex items-center">
@@ -180,6 +233,20 @@ const EntrepreneurDashboard = () => {
                 </div>
               </button>
             </div>
+            <button
+    onClick={() => navigate("/entrepreneur/nda-requests")}
+    className="p-4 rounded-lg border border-gray-200 hover:border-purple-500 hover:bg-purple-50 transition group text-left"
+  >
+    <div className="flex items-center">
+      <div className="p-3 bg-purple-100 rounded-lg mr-4 group-hover:bg-purple-200">
+        <Shield className="h-6 w-6 text-purple-600" />
+      </div>
+      <div>
+        <p className="font-medium text-gray-900">NDA Requests</p>
+        <p className="text-sm text-gray-500">Review investor access requests</p>
+      </div>
+    </div>
+  </button>
           </div>
 
           {/* Recent Activity */}
@@ -242,8 +309,11 @@ const EntrepreneurDashboard = () => {
                 <div className="bg-green-600 h-2 rounded-full" style={{ width: "75%" }}></div>
               </div>
             </div>
-            <button className="mt-6 w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition">
-              Complete Your Profile
+            <button 
+              onClick={() => hasStartup ? navigate(`/startup/edit/${startupId}`) : navigate("/startup/create")}
+              className="mt-6 w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition"
+            >
+              {hasStartup ? "Edit Your Startup" : "Complete Your Profile"}
             </button>
           </div>
 
