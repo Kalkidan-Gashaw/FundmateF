@@ -30,27 +30,39 @@ const User = sequelize.define("User", {
     defaultValue: "entrepreneur",
   },
   status: {
-    type: DataTypes.ENUM("pending", "active", "suspended"),
-    defaultValue: "pending",
+    type: DataTypes.ENUM("pending", "active", "suspended", "unverified"),
+    defaultValue: "unverified",
+  },
+  isEmailVerified: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
+  emailVerificationToken: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  emailVerificationExpires: {
+    type: DataTypes.DATE,
+    allowNull: true,
   },
 }, {
   timestamps: true,
+  hooks: {
+    beforeCreate: async (user) => {
+      if (user.password) {
+        user.password = await bcrypt.hash(user.password, 10);
+      }
+    },
+    beforeUpdate: async (user) => {
+      if (user.changed("password")) {
+        user.password = await bcrypt.hash(user.password, 10);
+      }
+    },
+  },
 });
 
-// Hash password before saving
-User.beforeCreate(async (user) => {
-  user.password = await bcrypt.hash(user.password, 10);
-});
-
-// Method to compare password
 User.prototype.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
-};
-
-// Association
-export const associateUser = (models) => {
-  User.hasOne(models.StartupProfile, { foreignKey: "userId" });
-  User.hasOne(models.InvestorProfile, { foreignKey: "userId" });
 };
 
 export default User;

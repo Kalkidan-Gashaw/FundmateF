@@ -11,11 +11,21 @@ import ndaRoutes from "./routes/ndaRoutes.js";
 import mentorRoutes from "./routes/mentorRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
 
+import resourceRoutes from "./routes/resourceRoutes.js";
+import path from "path";
+import { fileURLToPath } from "url";
+import adminRoutes from "./routes/adminRoutes.js";
+
+
+
 dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 
 // Socket.IO setup for real-time chat
 const io = new Server(server, {
@@ -38,40 +48,21 @@ io.on("connection", (socket) => {
     console.log("Connected users:", Array.from(connectedUsers.keys()));
   });
 
-  // Handle sending message
-  socket.on("send-message", async (data) => {
-    const { senderId, receiverId, message } = data;
-    console.log(`Message from ${senderId} to ${receiverId}: ${message}`);
+  // Handle sending message via socket by notifying receiver only
+  socket.on("send-message", (data) => {
+    const { senderId, receiverId, message, id, createdAt } = data;
+    console.log(`Socket message from ${senderId} to ${receiverId}: ${message}`);
 
-    try {
-      // Store message in database
-      const newMessage = await Message.create({
+    const receiverSocketId = connectedUsers.get(receiverId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("new-message", {
+        id,
         senderId,
         receiverId,
         message,
-        isRead: false,
+        createdAt,
       });
-
-      // Send real-time to receiver if online
-      const receiverSocketId = connectedUsers.get(receiverId);
-      if (receiverSocketId) {
-        io.to(receiverSocketId).emit("new-message", {
-          id: newMessage.id,
-          senderId,
-          message,
-          createdAt: newMessage.createdAt,
-        });
-        console.log(`Message delivered to ${receiverId}`);
-      }
-
-      // Confirm to sender
-      socket.emit("message-sent", {
-        success: true,
-        data: newMessage,
-      });
-    } catch (error) {
-      console.error("Error saving message:", error);
-      socket.emit("message-error", { error: error.message });
+      console.log(`Message delivered to ${receiverId}`);
     }
   });
 
@@ -128,6 +119,8 @@ io.on("connection", (socket) => {
 app.use(cors());
 app.use(express.json());
 
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/entrepreneur", entrepreneurRoutes);
@@ -135,6 +128,11 @@ app.use("/api/investor", investorRoutes);
 app.use("/api/nda", ndaRoutes);
 app.use("/api/mentor", mentorRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/resources", resourceRoutes);
+app.use("/api/admin", adminRoutes);
+import notificationRoutes from "./routes/notificationRoutes.js";
+
+app.use("/api/notifications", notificationRoutes);
 
 // Test route
 app.get("/", (req, res) => {

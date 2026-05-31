@@ -6,7 +6,6 @@ import {
   Briefcase, 
   Users, 
   GraduationCap, 
-  FileText, 
   LogOut,
   PlusCircle,
   Search,
@@ -14,8 +13,10 @@ import {
   TrendingUp,
   Bell,
   Calendar,
-  Star,
-  Shield
+  Shield,
+  Eye,
+  CheckCircle,
+  DollarSign
 } from "lucide-react";
 
 const EntrepreneurDashboard = () => {
@@ -23,6 +24,9 @@ const EntrepreneurDashboard = () => {
   const [user, setUser] = useState(null);
   const [hasStartup, setHasStartup] = useState(false);
   const [startupId, setStartupId] = useState(null);
+  const [startup, setStartup] = useState(null);
+  const [interestedInvestors, setInterestedInvestors] = useState(0);
+  const [activeMentors, setActiveMentors] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -36,25 +40,43 @@ const EntrepreneurDashboard = () => {
     
     setUser(JSON.parse(userData));
     
-    // Check if user has a startup
-    const checkStartup = async () => {
+    const fetchDashboardData = async () => {
       try {
-        const response = await API.get("/entrepreneur/startup");
-        if (response.data.data) {
+        // Check if user has a startup
+        const startupResponse = await API.get("/entrepreneur/startup");
+        if (startupResponse.data.data) {
           setHasStartup(true);
-          setStartupId(response.data.data.id);
+          setStartupId(startupResponse.data.data.id);
+          setStartup(startupResponse.data.data);
+          
+          // Fetch interested investors (investors who signed NDA)
+          try {
+            const investorsResponse = await API.get("/entrepreneur/interested-investors");
+            setInterestedInvestors(investorsResponse.data.data?.length || 0);
+          } catch (err) {
+            console.error("Error fetching investors:", err);
+          }
+          
+          // Fetch active mentors (accepted mentorship requests)
+          try {
+            const mentorshipResponse = await API.get("/mentor/my-requests");
+            const mentorshipRequests = mentorshipResponse.data.data || [];
+            const activeMentorsCount = mentorshipRequests.filter(r => r.status === "accepted" || r.status === "completed").length;
+            setActiveMentors(activeMentorsCount);
+          } catch (err) {
+            console.error("Error fetching mentors:", err);
+          }
         }
       } catch (error) {
         if (error.response?.status !== 404) {
-          console.error("Error checking startup:", error);
+          console.error("Error fetching dashboard data:", error);
         }
-        setHasStartup(false);
       } finally {
         setLoading(false);
       }
     };
     
-    checkStartup();
+    fetchDashboardData();
   }, [navigate]);
 
   const handleLogout = () => {
@@ -62,6 +84,24 @@ const EntrepreneurDashboard = () => {
     localStorage.removeItem("user");
     navigate("/login");
   };
+
+  // Calculate profile completion percentage
+  const calculateProfileCompletion = () => {
+    if (!startup) return 0;
+    
+    let completed = 0;
+    let total = 5;
+    
+    if (startup.startupName && startup.startupName.trim() !== "") completed++;
+    if (startup.sector && startup.sector !== "other") completed++;
+    if (startup.fundingStage) completed++;
+    if (startup.description && startup.description.length > 50) completed++;
+    if (startup.fundingRequired && startup.fundingRequired > 0) completed++;
+    
+    return Math.round((completed / total) * 100);
+  };
+
+  const profileCompletion = calculateProfileCompletion();
 
   if (loading) {
     return (
@@ -88,7 +128,7 @@ const EntrepreneurDashboard = () => {
                 </span>
               </div>
               <div className="text-gray-600">
-                Last login: Today, {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                Member since {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
               </div>
             </div>
           </div>
@@ -107,49 +147,27 @@ const EntrepreneurDashboard = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      {/* Stats Cards - Only Investor Interested and Mentors */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-sm">Profile Views</p>
-              <p className="text-2xl font-bold text-gray-900">24</p>
-            </div>
-            <div className="p-3 bg-blue-100 rounded-full">
-              <TrendingUp className="h-6 w-6 text-blue-600" />
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm">Investor Matches</p>
-              <p className="text-2xl font-bold text-gray-900">8</p>
+              <p className="text-gray-500 text-sm">Interested Investors</p>
+              <p className="text-2xl font-bold text-gray-900">{interestedInvestors}</p>
             </div>
             <div className="p-3 bg-green-100 rounded-full">
-              <Users className="h-6 w-6 text-green-600" />
+              <DollarSign className="h-6 w-6 text-green-600" />
             </div>
           </div>
         </div>
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-sm">Mentorship Sessions</p>
-              <p className="text-2xl font-bold text-gray-900">3</p>
+              <p className="text-gray-500 text-sm">Active Mentors</p>
+              <p className="text-2xl font-bold text-gray-900">{activeMentors}</p>
             </div>
             <div className="p-3 bg-purple-100 rounded-full">
               <GraduationCap className="h-6 w-6 text-purple-600" />
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm">Documents Uploaded</p>
-              <p className="text-2xl font-bold text-gray-900">5</p>
-            </div>
-            <div className="p-3 bg-yellow-100 rounded-full">
-              <FileText className="h-6 w-6 text-yellow-600" />
             </div>
           </div>
         </div>
@@ -197,7 +215,10 @@ const EntrepreneurDashboard = () => {
                 </button>
               )}
 
-              <button className="p-4 rounded-lg border border-gray-200 hover:border-green-500 hover:bg-green-50 transition group text-left">
+              <button 
+                onClick={() => navigate("/investors")}
+                className="p-4 rounded-lg border border-gray-200 hover:border-green-500 hover:bg-green-50 transition group text-left"
+              >
                 <div className="flex items-center">
                   <div className="p-3 bg-green-100 rounded-lg mr-4 group-hover:bg-green-200">
                     <Search className="h-6 w-6 text-green-600" />
@@ -209,75 +230,38 @@ const EntrepreneurDashboard = () => {
                 </div>
               </button>
 
-              <button className="p-4 rounded-lg border border-gray-200 hover:border-purple-500 hover:bg-purple-50 transition group text-left">
+              <button 
+                onClick={() => navigate("/entrepreneur/find-mentors")}
+                className="p-4 rounded-lg border border-gray-200 hover:border-purple-500 hover:bg-purple-50 transition group text-left"
+              >
                 <div className="flex items-center">
                   <div className="p-3 bg-purple-100 rounded-lg mr-4 group-hover:bg-purple-200">
                     <GraduationCap className="h-6 w-6 text-purple-600" />
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">Request Mentorship</p>
+                    <p className="font-medium text-gray-900">Find Mentors</p>
                     <p className="text-sm text-gray-500">Get guidance from experts</p>
                   </div>
                 </div>
               </button>
-
-              <button className="p-4 rounded-lg border border-gray-200 hover:border-yellow-500 hover:bg-yellow-50 transition group text-left">
+            </div>
+            
+            {hasStartup && (
+              <button
+                onClick={() => navigate("/entrepreneur/nda-requests")}
+                className="mt-4 w-full p-4 rounded-lg border border-gray-200 hover:border-purple-500 hover:bg-purple-50 transition group text-left"
+              >
                 <div className="flex items-center">
-                  <div className="p-3 bg-yellow-100 rounded-lg mr-4 group-hover:bg-yellow-200">
-                    <FileText className="h-6 w-6 text-yellow-600" />
+                  <div className="p-3 bg-purple-100 rounded-lg mr-4 group-hover:bg-purple-200">
+                    <Shield className="h-6 w-6 text-purple-600" />
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">Upload Documents</p>
-                    <p className="text-sm text-gray-500">Pitch deck, business plan</p>
+                    <p className="font-medium text-gray-900">NDA Requests</p>
+                    <p className="text-sm text-gray-500">Review investor access requests</p>
                   </div>
                 </div>
               </button>
-            </div>
-            <button
-    onClick={() => navigate("/entrepreneur/nda-requests")}
-    className="p-4 rounded-lg border border-gray-200 hover:border-purple-500 hover:bg-purple-50 transition group text-left"
-  >
-    <div className="flex items-center">
-      <div className="p-3 bg-purple-100 rounded-lg mr-4 group-hover:bg-purple-200">
-        <Shield className="h-6 w-6 text-purple-600" />
-      </div>
-      <div>
-        <p className="font-medium text-gray-900">NDA Requests</p>
-        <p className="text-sm text-gray-500">Review investor access requests</p>
-      </div>
-    </div>
-  </button>
-          </div>
-
-          {/* Recent Activity */}
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Recent Activity</h2>
-            <div className="space-y-4">
-              {[
-                { id: 1, action: "New investor match - Tech Ventures", time: "2 hours ago", type: "success" },
-                { id: 2, action: "Pitch deck reviewed by Angel Fund", time: "1 day ago", type: "info" },
-                { id: 3, action: "Meeting scheduled with Capital Partners", time: "2 days ago", type: "warning" },
-                { id: 4, action: "Profile viewed by 5 investors", time: "3 days ago", type: "success" },
-              ].map((activity) => (
-                <div key={activity.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition">
-                  <div className="flex items-center">
-                    <div className={`p-2 rounded-lg mr-3 ${
-                      activity.type === 'success' ? 'bg-green-100' :
-                      activity.type === 'info' ? 'bg-blue-100' : 'bg-yellow-100'
-                    }`}>
-                      {activity.type === 'success' && <Star className="h-4 w-4 text-green-600" />}
-                      {activity.type === 'info' && <Bell className="h-4 w-4 text-blue-600" />}
-                      {activity.type === 'warning' && <Calendar className="h-4 w-4 text-yellow-600" />}
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{activity.action}</p>
-                      <p className="text-sm text-gray-500">{activity.time}</p>
-                    </div>
-                  </div>
-                  <MessageSquare className="h-5 w-5 text-gray-400" />
-                </div>
-              ))}
-            </div>
+            )}
           </div>
         </div>
 
@@ -299,14 +283,32 @@ const EntrepreneurDashboard = () => {
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-gray-600">Member Since</span>
-                <span className="font-medium">March 2025</span>
+                <span className="font-medium">
+                  {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'N/A'}
+                </span>
               </div>
+              {startup && (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Startup</span>
+                    <span className="font-medium">{startup.startupName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Sector</span>
+                    <span className="font-medium capitalize">{startup.sector}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Funding Stage</span>
+                    <span className="font-medium capitalize">{startup.fundingStage?.replace(/_/g, ' ')}</span>
+                  </div>
+                </>
+              )}
               <div className="flex justify-between">
                 <span className="text-gray-600">Profile Complete</span>
-                <span className="font-medium text-green-600">75%</span>
+                <span className="font-medium text-green-600">{profileCompletion}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-green-600 h-2 rounded-full" style={{ width: "75%" }}></div>
+                <div className="bg-green-600 h-2 rounded-full" style={{ width: `${profileCompletion}%` }}></div>
               </div>
             </div>
             <button 
@@ -317,23 +319,28 @@ const EntrepreneurDashboard = () => {
             </button>
           </div>
 
-          {/* Upcoming */}
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
-              <Calendar className="h-5 w-5 text-purple-600 mr-2" />
-              Upcoming
-            </h2>
-            <div className="space-y-3">
-              <div className="p-3 bg-purple-50 rounded-lg">
-                <p className="font-medium text-gray-900">Investor Pitch Session</p>
-                <p className="text-sm text-gray-500">Tomorrow, 2:00 PM</p>
-              </div>
-              <div className="p-3 bg-blue-50 rounded-lg">
-                <p className="font-medium text-gray-900">Mentorship Meeting</p>
-                <p className="text-sm text-gray-500">In 3 days, 10:00 AM</p>
+          {/* Startup Preview - Only if startup exists */}
+          {hasStartup && startup && (
+            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                <Briefcase className="h-5 w-5 text-blue-600 mr-2" />
+                Your Startup
+              </h2>
+              <div className="space-y-2">
+                <p className="font-medium text-gray-900">{startup.startupName}</p>
+                {startup.description && (
+                  <p className="text-sm text-gray-500 line-clamp-3">{startup.description.substring(0, 150)}...</p>
+                )}
+                <button
+                  onClick={() => navigate(`/startup/mine`)}
+                  className="mt-2 text-blue-600 hover:text-blue-700 text-sm flex items-center"
+                >
+                  <Eye className="h-4 w-4 mr-1" />
+                  View full profile
+                </button>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

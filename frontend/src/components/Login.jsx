@@ -1,12 +1,12 @@
 import { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Rocket, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Rocket, Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login } = useContext(AuthContext); // Add this
+  const { login } = useContext(AuthContext);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -14,24 +14,27 @@ const Login = () => {
   });
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [unverifiedEmail, setUnverifiedEmail] = useState("");
+  const [resending, setResending] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setNeedsVerification(false);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage("");
+    setNeedsVerification(false);
     
     try {
       const response = await axios.post("http://localhost:5000/api/auth/login", formData);
       const { token, user } = response.data;
       
-      // Use AuthContext login function
       login(token, user);
       
-      // Redirect based on role
       switch (user.role) {
         case "entrepreneur":
           navigate("/entrepreneur-dashboard");
@@ -49,16 +52,38 @@ const Login = () => {
           navigate("/");
       }
     } catch (error) {
-      setMessage(error.response?.data?.message || "Error logging in");
+      const errorData = error.response?.data;
+      
+      if (errorData?.needsVerification) {
+        setNeedsVerification(true);
+        setUnverifiedEmail(errorData.email || formData.email);
+        setMessage({ type: "warning", text: errorData.message });
+      } else {
+        setMessage({ type: "error", text: errorData?.message || "Error logging in" });
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setResending(true);
+    try {
+      await axios.post("http://localhost:5000/api/auth/resend-verification", {
+        email: unverifiedEmail || formData.email,
+      });
+      setMessage({ type: "success", text: "Verification email sent! Please check your inbox." });
+      setNeedsVerification(false);
+    } catch (error) {
+      setMessage({ type: "error", text: error.response?.data?.message || "Error sending verification email" });
+    } finally {
+      setResending(false);
     }
   };
 
   return (
     <div className="min-h-screen overflow-auto flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-12">
       <div className="max-w-md w-full mx-4">
-        {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full mb-4">
             <Rocket className="h-8 w-8 text-white" />
@@ -67,11 +92,36 @@ const Login = () => {
           <p className="text-gray-600 mt-2">Login to your FundMate account</p>
         </div>
 
-        {/* Form */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
           {message && (
-            <div className="mb-4 p-3 rounded-lg text-sm bg-red-50 text-red-800 border border-red-200">
-              {message}
+            <div className={`mb-4 p-3 rounded-lg text-sm ${
+              message.type === "success" 
+                ? "bg-green-50 text-green-800 border border-green-200" 
+                : message.type === "warning"
+                ? "bg-yellow-50 text-yellow-800 border border-yellow-200"
+                : "bg-red-50 text-red-800 border border-red-200"
+            }`}>
+              {message.text}
+            </div>
+          )}
+
+          {needsVerification && (
+            <div className="mb-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+              <div className="flex items-start space-x-3">
+                <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm text-yellow-800 mb-2">
+                    Please verify your email address before logging in.
+                  </p>
+                  <button
+                    onClick={handleResendVerification}
+                    disabled={resending}
+                    className="text-sm text-yellow-700 hover:text-yellow-800 font-medium underline"
+                  >
+                    {resending ? "Sending..." : "Resend verification email"}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 

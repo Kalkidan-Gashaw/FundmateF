@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import API from "../../services/api";
-import SignNDAModal from "./SignalNDAModal";
+import SignNDAModal from "./SignNDAModal"; // 
 import {
   ArrowLeft,
   Building2,
@@ -61,23 +61,23 @@ const StartupDetail = () => {
   };
 
   const handleSignNDA = async () => {
-  setSigningNDA(true);
-  try {
-    const response = await API.post("/nda/sign", { startupId: id }); // Make sure id is correct
-    setHasNDA(true);
-    setMessage({ type: "success", text: response.data.message });
-    await fetchStartupDetails();
-    setShowNDAModal(false);
-  } catch (error) {
-    console.error("Error signing NDA:", error.response?.data || error);
-    setMessage({
-      type: "error",
-      text: error.response?.data?.message || "Error signing NDA",
-    });
-  } finally {
-    setSigningNDA(false);
-  }
-};
+    setSigningNDA(true);
+    try {
+      const response = await API.post("/nda/sign", { startupId: id });
+      setHasNDA(true);
+      setMessage({ type: "success", text: response.data.message });
+      await fetchStartupDetails();
+      setShowNDAModal(false);
+    } catch (error) {
+      console.error("Error signing NDA:", error.response?.data || error);
+      setMessage({
+        type: "error",
+        text: error.response?.data?.message || "Error signing NDA",
+      });
+    } finally {
+      setSigningNDA(false);
+    }
+  };
 
   const getSectorLabel = (sector) => {
     const sectors = {
@@ -133,13 +133,14 @@ const StartupDetail = () => {
 
   return (
     <div className="max-w-5xl mx-auto">
-      {/* NDA Modal */}
+      {/* NDA Modal - Pass startupId */}
       <SignNDAModal
         isOpen={showNDAModal}
         onClose={() => setShowNDAModal(false)}
         onSign={handleSignNDA}
         signing={signingNDA}
         startupName={startup.startupName}
+        startupId={id}  // Add this line - pass the startup ID
       />
 
       {/* Header */}

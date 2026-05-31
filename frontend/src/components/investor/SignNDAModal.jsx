@@ -1,9 +1,56 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Shield, AlertCircle, Loader } from "lucide-react";
+import API from "../../services/api";
 
-const SignNDAModal = ({ isOpen, onClose, onSign, signing, startupName }) => {
+const SignNDAModal = ({ isOpen, onClose, onSign, signing, startupName, startupId }) => {
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState(null);
+  const [ndaTemplate, setNdaTemplate] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchNDATemplate();
+    }
+  }, [isOpen]);
+
+  const fetchNDATemplate = async () => {
+    setLoading(true);
+    try {
+      const response = await API.get("/admin/settings/nda-template");
+      setNdaTemplate(response.data.data.value);
+    } catch (error) {
+      console.error("Error fetching NDA template:", error);
+      // Set default template if API fails
+      setNdaTemplate(`NON-DISCLOSURE AGREEMENT
+
+This Non-Disclosure Agreement (the "Agreement") is entered into between the Startup and the Investor.
+
+1. PURPOSE
+The Investor acknowledges that the Startup possesses certain confidential information regarding its business, technology, financials, and operations that is valuable and proprietary.
+
+2. CONFIDENTIAL INFORMATION
+Confidential Information includes, but is not limited to: business plans, financial statements, customer lists, technical data, product designs, marketing strategies, and any other information marked as confidential or reasonably understood to be confidential.
+
+3. OBLIGATIONS OF INVESTOR
+The Investor agrees to:
+- Not disclose any Confidential Information to third parties
+- Use Confidential Information solely for evaluating a potential investment
+- Protect Confidential Information with reasonable care
+- Not use Confidential Information to compete with the Startup
+
+4. TERM
+This Agreement shall remain in effect for a period of 2 years from the date of signing.
+
+5. RETURN OF INFORMATION
+Upon request, the Investor shall return or destroy all Confidential Information received.
+
+6. GOVERNING LAW
+This Agreement shall be governed by the laws of Ethiopia.`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSign = () => {
     if (!agreed) {
@@ -41,46 +88,17 @@ const SignNDAModal = ({ isOpen, onClose, onSign, signing, startupName }) => {
             </p>
           </div>
 
-          <div className="prose prose-sm max-w-none">
-            <h3 className="text-lg font-bold text-gray-900">1. Purpose</h3>
-            <p className="text-gray-700">
-              The Investor acknowledges that the Startup possesses certain confidential information 
-              regarding its business, technology, financials, and operations that is valuable and proprietary.
-            </p>
-
-            <h3 className="text-lg font-bold text-gray-900 mt-4">2. Confidential Information</h3>
-            <p className="text-gray-700">
-              Confidential Information includes, but is not limited to: business plans, financial statements, 
-              customer lists, technical data, product designs, marketing strategies, and any other information 
-              marked as confidential or reasonably understood to be confidential.
-            </p>
-
-            <h3 className="text-lg font-bold text-gray-900 mt-4">3. Obligations of Investor</h3>
-            <p className="text-gray-700">
-              The Investor agrees to:
-            </p>
-            <ul className="list-disc pl-6 text-gray-700 space-y-1">
-              <li>Not disclose any Confidential Information to third parties</li>
-              <li>Use Confidential Information solely for evaluating a potential investment</li>
-              <li>Protect Confidential Information with reasonable care</li>
-              <li>Not use Confidential Information to compete with the Startup</li>
-            </ul>
-
-            <h3 className="text-lg font-bold text-gray-900 mt-4">4. Term</h3>
-            <p className="text-gray-700">
-              This Agreement shall remain in effect for a period of 2 years from the date of signing.
-            </p>
-
-            <h3 className="text-lg font-bold text-gray-900 mt-4">5. Return of Information</h3>
-            <p className="text-gray-700">
-              Upon request, the Investor shall return or destroy all Confidential Information received.
-            </p>
-
-            <h3 className="text-lg font-bold text-gray-900 mt-4">6. Governing Law</h3>
-            <p className="text-gray-700">
-              This Agreement shall be governed by the laws of Ethiopia.
-            </p>
-          </div>
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <Loader className="h-8 w-8 animate-spin text-blue-600" />
+            </div>
+          ) : (
+            <div className="prose prose-sm max-w-none">
+              <div className="whitespace-pre-wrap text-gray-700">
+                {ndaTemplate}
+              </div>
+            </div>
+          )}
 
           {/* Agreement Checkbox */}
           <div className="border-t border-gray-200 pt-6">

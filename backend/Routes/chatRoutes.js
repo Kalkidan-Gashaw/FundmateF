@@ -1,33 +1,33 @@
-import express from 'express';
-import { protect } from '../middleware/authMiddleware.js';
+import express from "express";
+import { protect } from "../middleware/authMiddleware.js";
+import { upload } from "../config/upload.js";
 import {
   sendMessage,
+  sendFile,
   getConversation,
   getConversations,
   markAsRead,
   getUnreadCount,
-  markMessagesAsRead
-} from '../controllers/chatController.js';
+  markMessagesAsRead,
+  downloadFile,
+  editMessage,
+  deleteMessage,
+} from "../controllers/chatController.js";
 
 const router = express.Router();
 
-// All chat routes require authentication
 router.use(protect);
 
-// Send a message
-router.post('/send', sendMessage);
-
-// Get all conversations for current user
-router.get('/conversations', getConversations);
-
-// Get conversation with a specific user
-router.get('/conversation/:userId', getConversation);
-
-// Mark message as read
-router.put('/read/:messageId', markAsRead);
-
-// Get unread message count
-router.get('/unread-count', getUnreadCount);
-router.put('/mark-read/:userId', markMessagesAsRead);
+// Message routes
+router.post("/send", sendMessage);
+router.post("/send-file", upload.single("file"), sendFile);
+router.get("/conversations", getConversations);
+router.get("/conversation/:userId", getConversation);
+router.put("/read/:messageId", markAsRead);
+router.put("/mark-read/:userId", markMessagesAsRead);
+router.get("/unread-count", getUnreadCount);
+router.get("/download/:messageId", downloadFile);
+router.put("/message/:messageId", editMessage);
+router.delete("/message/:messageId", deleteMessage);
 
 export default router;
