@@ -12,7 +12,8 @@ import {
   acceptRequest,
   rejectRequest,
   completeSession,
-  getMentorByUserId
+  getMentorByUserId,
+  getAllMentorsWithMatches
 } from "../controllers/mentorController.js";
 
 const router = express.Router();
@@ -42,5 +43,6 @@ router.post("/request", authorize("entrepreneur"), requestMentorship);
 router.put("/accept/:requestId", authorize("mentor"), acceptRequest);
 router.put("/reject/:requestId", authorize("mentor"), rejectRequest);
 router.put("/complete/:requestId", completeSession);
+router.get("/all-with-matches", getAllMentorsWithMatches);
 
 export default router;

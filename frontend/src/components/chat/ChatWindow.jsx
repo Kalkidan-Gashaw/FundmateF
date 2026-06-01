@@ -25,6 +25,105 @@ const ChatWindow = ({ user: otherUser, currentUser, onClose, socket }) => {
     );
   };
 
+  // DEFINE handleTyping FIRST before it's used
+  const handleTyping = useCallback((isTypingNow) => {
+    if (!otherUser) return;
+    socket.emit("typing", {
+      senderId: currentUser.id,
+      receiverId: otherUser.id,
+      isTyping: isTypingNow,
+    });
+  }, [otherUser, currentUser.id, socket]);
+
+  // DEFINE handleSendFile SECOND
+  const handleSendFile = useCallback(async (formData) => {
+    if (!otherUser || uploading) return;
+
+    setUploading(true);
+    
+    formData.append("receiverId", otherUser.id);
+    
+    try {
+      const response = await API.post("/chat/send-file", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      const newMessage = response.data.data;
+      messageIdsRef.current.add(newMessage.id);
+      
+      setMessages(prev => [...prev, newMessage]);
+      scrollToBottom();
+      
+      socket.emit("send-message", {
+        senderId: currentUser.id,
+        receiverId: otherUser.id,
+        message: `📎 ${newMessage.fileName}`,
+        id: newMessage.id,
+        createdAt: newMessage.createdAt,
+      });
+      
+    } catch (error) {
+      console.error("Error sending file:", error);
+    } finally {
+      setUploading(false);
+    }
+  }, [otherUser, uploading, currentUser.id, socket]);
+
+  // DEFINE handleSendMessage THIRD
+  const handleSendMessage = useCallback(async (messageText) => {
+    if (!messageText.trim() || !otherUser || sending) return;
+
+    setSending(true);
+    
+    const tempId = `temp-${Date.now()}-${Math.random()}`;
+    const tempMessage = {
+      id: tempId,
+      senderId: currentUser.id,
+      receiverId: otherUser.id,
+      message: messageText,
+      createdAt: new Date().toISOString(),
+      isRead: false,
+      isTemp: true
+    };
+    
+    messageIdsRef.current.add(normalizeMessageId(tempId));
+    setMessages(prev => [...prev, tempMessage]);
+    scrollToBottom();
+    
+    try {
+      const response = await API.post("/chat/send", {
+        receiverId: otherUser.id,
+        message: messageText,
+      });
+
+      const newMessage = response.data.data;
+      const normalizedNewId = normalizeMessageId(newMessage.id);
+      messageIdsRef.current.add(normalizedNewId);
+      
+      setMessages(prev => {
+        const withoutTemp = prev.filter(msg => msg.id !== tempId);
+        if (withoutTemp.some(msg => normalizeMessageId(msg.id) === normalizedNewId)) {
+          return withoutTemp;
+        }
+        return [...withoutTemp, newMessage];
+      });
+      
+      socket.emit("send-message", {
+        senderId: currentUser.id,
+        receiverId: otherUser.id,
+        message: messageText,
+        id: newMessage.id,
+        createdAt: newMessage.createdAt,
+      });
+      
+    } catch (error) {
+      console.error("Error sending message:", error);
+      setMessages(prev => prev.filter(msg => msg.id !== tempId));
+    } finally {
+      setSending(false);
+    }
+  }, [otherUser, currentUser.id, sending, socket]);
+
   useEffect(() => {
     if (otherUser) {
       fetchMessages();
@@ -108,60 +207,6 @@ const ChatWindow = ({ user: otherUser, currentUser, onClose, socket }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const handleSendMessage = useCallback(async (messageText) => {
-    if (!messageText.trim() || !otherUser || sending) return;
-
-    setSending(true);
-    
-    const tempId = `temp-${Date.now()}-${Math.random()}`;
-    const tempMessage = {
-      id: tempId,
-      senderId: currentUser.id,
-      receiverId: otherUser.id,
-      message: messageText,
-      createdAt: new Date().toISOString(),
-      isRead: false,
-      isTemp: true
-    };
-    
-    messageIdsRef.current.add(normalizeMessageId(tempId));
-    setMessages(prev => [...prev, tempMessage]);
-    scrollToBottom();
-    
-    try {
-      const response = await API.post("/chat/send", {
-        receiverId: otherUser.id,
-        message: messageText,
-      });
-
-      const newMessage = response.data.data;
-      const normalizedNewId = normalizeMessageId(newMessage.id);
-      messageIdsRef.current.add(normalizedNewId);
-      
-      setMessages(prev => {
-        const withoutTemp = prev.filter(msg => msg.id !== tempId);
-        if (withoutTemp.some(msg => normalizeMessageId(msg.id) === normalizedNewId)) {
-          return withoutTemp;
-        }
-        return [...withoutTemp, newMessage];
-      });
-      
-      socket.emit("send-message", {
-        senderId: currentUser.id,
-        receiverId: otherUser.id,
-        message: messageText,
-        id: newMessage.id,
-        createdAt: newMessage.createdAt,
-      });
-      
-    } catch (error) {
-      console.error("Error sending message:", error);
-      setMessages(prev => prev.filter(msg => msg.id !== tempId));
-    } finally {
-      setSending(false);
-    }
-  }, [otherUser, currentUser.id, sending, socket]);
-
   const handleEditMessage = async (messageId, newMessage) => {
     try {
       const response = await API.put(`/chat/message/${messageId}`, { message: newMessage });
@@ -222,48 +267,6 @@ const ChatWindow = ({ user: otherUser, currentUser, onClose, socket }) => {
       console.error("Error forwarding message:", error);
     }
   };
-
-  const handleSendFile = useCallback(async (formData) => {
-    if (!otherUser || uploading) return;
-
-    setUploading(true);
-    
-    formData.append("receiverId", otherUser.id);
-    
-    try {
-      const response = await API.post("/chat/send-file", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      const newMessage = response.data.data;
-      messageIdsRef.current.add(newMessage.id);
-      
-      setMessages(prev => [...prev, newMessage]);
-      scrollToBottom();
-      
-      socket.emit("send-message", {
-        senderId: currentUser.id,
-        receiverId: otherUser.id,
-        message: `📎 ${newMessage.fileName}`,
-        id: newMessage.id,
-        createdAt: newMessage.createdAt,
-      });
-      
-    } catch (error) {
-      console.error("Error sending file:", error);
-    } finally {
-      setUploading(false);
-    }
-  }, [otherUser, uploading, currentUser.id, socket]);
-
-  const handleTyping = useCallback((isTypingNow) => {
-    if (!otherUser) return;
-    socket.emit("typing", {
-      senderId: currentUser.id,
-      receiverId: otherUser.id,
-      isTyping: isTypingNow,
-    });
-  }, [otherUser, currentUser.id, socket]);
 
   if (!otherUser) {
     return (

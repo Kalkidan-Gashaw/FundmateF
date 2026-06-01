@@ -16,8 +16,7 @@ import {
   Search,
   Loader,
   Trash2,
-  Edit,
-  MoreVertical
+  MessageCircle
 } from "lucide-react";
 
 const Resources = () => {
@@ -28,11 +27,13 @@ const Resources = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showShareModal, setShowShareModal] = useState(false);
   const [userRole, setUserRole] = useState("");
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    fetchResources();
     const userData = JSON.parse(localStorage.getItem("user") || "{}");
+    setUser(userData);
     setUserRole(userData.role);
+    fetchResources();
   }, []);
 
   const fetchResources = async () => {
@@ -63,6 +64,10 @@ const Resources = () => {
     }
   };
 
+  const handleChatWithMentor = (mentorId, mentorName) => {
+    navigate(`/messages?userId=${mentorId}&name=${encodeURIComponent(mentorName)}&role=mentor`);
+  };
+
   const categories = ["all", "Pitching", "Strategy", "Fundraising", "Research", "Finance", "Product", "Marketing", "Sales"];
 
   const filteredResources = resources.filter(resource => {
@@ -78,6 +83,13 @@ const Resources = () => {
     return <LinkIcon className="h-5 w-5 text-green-600" />;
   };
 
+  // Get dashboard path based on role
+  const getDashboardPath = () => {
+    if (userRole === "mentor") return "/mentor-dashboard";
+    if (userRole === "entrepreneur") return "/entrepreneur-dashboard";
+    return "/dashboard";
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -88,17 +100,19 @@ const Resources = () => {
 
   return (
     <div className="max-w-7xl mx-auto">
-      {/* Share Resource Modal */}
-      <ShareResourceModal
-        isOpen={showShareModal}
-        onClose={() => setShowShareModal(false)}
-        onSuccess={fetchResources}
-      />
+      {/* Share Resource Modal - Only for mentors */}
+      {userRole === "mentor" && (
+        <ShareResourceModal
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          onSuccess={fetchResources}
+        />
+      )}
 
       {/* Header */}
       <div className="mb-8">
         <button
-          onClick={() => navigate("/mentor-dashboard")}
+          onClick={() => navigate(getDashboardPath())}
           className="flex items-center text-gray-600 hover:text-gray-900 mb-4 transition"
         >
           <ArrowLeft className="h-5 w-5 mr-1" />
@@ -110,9 +124,11 @@ const Resources = () => {
               <BookOpen className="h-6 w-6 text-purple-600" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Mentorship Resources</h1>
+              <h1 className="text-3xl font-bold text-gray-900">Resources</h1>
               <p className="text-gray-600 mt-1">
-                Share and access resources to help entrepreneurs grow
+                {userRole === "mentor" 
+                  ? "Share resources with your mentees"
+                  : "Resources shared with you by your mentors"}
               </p>
             </div>
           </div>
@@ -176,7 +192,9 @@ const Resources = () => {
           </div>
           <h3 className="text-xl font-bold text-gray-900 mb-2">No resources found</h3>
           <p className="text-gray-600">
-            Try adjusting your search or {userRole === "mentor" && "share a new resource"}
+            {userRole === "mentor" 
+              ? "Share a resource with your mentees to get started"
+              : "No resources have been shared with you yet. Check with your mentor."}
           </p>
           {userRole === "mentor" && (
             <button
@@ -198,7 +216,7 @@ const Resources = () => {
                   </div>
                   <div className="flex items-center space-x-2">
                     <span className="text-xs text-gray-400">{resource.category}</span>
-                    {userRole === "mentor" && resource.authorId === JSON.parse(localStorage.getItem("user") || "{}").id && (
+                    {userRole === "mentor" && resource.authorId === user?.id && (
                       <button
                         onClick={() => handleDeleteResource(resource.id)}
                         className="text-red-500 hover:text-red-700"
@@ -232,7 +250,17 @@ const Resources = () => {
                 </div>
                 
                 <div className="flex items-center justify-between text-xs text-gray-400 mb-3">
-                  <span>By {resource.author?.name || "Unknown"}</span>
+                  <div className="flex items-center space-x-1">
+                    <span>By {resource.author?.name || "Unknown"}</span>
+                    {userRole !== "mentor" && resource.authorId !== user?.id && (
+                      <button
+                        onClick={() => handleChatWithMentor(resource.authorId, resource.author?.name)}
+                        className="text-blue-500 hover:text-blue-700 ml-2"
+                      >
+                        <MessageCircle className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
                   <span>{new Date(resource.createdAt).toLocaleDateString()}</span>
                 </div>
                 
@@ -242,7 +270,7 @@ const Resources = () => {
                     className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm"
                   >
                     <Eye className="h-4 w-4" />
-                    <span>View</span>
+                    <span>View Resource</span>
                   </button>
                   <button className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition text-sm">
                     <Heart className="h-4 w-4" />
@@ -255,8 +283,8 @@ const Resources = () => {
         </div>
       )}
 
-      {/* Popular Resources Section */}
-      {resources.filter(r => r.views > 0).length > 0 && (
+      {/* Popular Resources Section - Only for entrepreneurs */}
+      {userRole !== "mentor" && resources.filter(r => r.views > 0).length > 0 && (
         <div className="mt-12 p-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl">
           <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
             <TrendingUp className="h-5 w-5 text-purple-600 mr-2" />

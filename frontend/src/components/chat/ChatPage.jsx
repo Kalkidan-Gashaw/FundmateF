@@ -84,13 +84,13 @@ const ChatPage = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="mb-6">
-        <button
+        {/* <button
           onClick={() => navigate('/dashboard')}
           className="flex items-center text-gray-600 hover:text-gray-900 mb-4 transition"
         >
           <ArrowLeft className="h-5 w-5 mr-1" />
           Back to Dashboard
-        </button>
+        </button> */}
         <div className="flex items-center space-x-3">
           <div className="p-3 bg-blue-100 rounded-xl">
             <MessageCircle className="h-6 w-6 text-blue-600" />

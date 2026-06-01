@@ -1,5 +1,6 @@
 import StartupProfile from "../models/StartupProfile.js";
 import InvestorProfile from "../models/InvestorProfile.js";
+import NDA from "../models/NDA.js";
 import User from "../models/User.js";
 import { Op } from "sequelize";
 
@@ -93,8 +94,6 @@ export const updateStartupProfile = async (req, res) => {
     });
   }
 };
-
-
 
 
 // Find investors based on entrepreneur's startup
@@ -250,35 +249,42 @@ export const searchInvestors = async (req, res) => {
   }
 };
 
-// Get investor by ID
+
+// Get investor by ID (InvestorProfile ID) - ADD THIS FUNCTION
 export const getInvestorById = async (req, res) => {
   try {
     const { id } = req.params;
+    
+    console.log("=== getInvestorById called ===");
+    console.log("Investor ID:", id);
     
     const investor = await InvestorProfile.findOne({
       where: { id },
       include: [
         {
           model: User,
-         as: "user",
-          attributes: ["id", "name", "email"],
+          as: "user",
+          attributes: ["id", "name", "email", "createdAt"],
         },
       ],
     });
     
     if (!investor) {
+      console.log("Investor not found");
       return res.status(404).json({
         success: false,
         message: "Investor not found",
       });
     }
     
+    console.log("Investor found:", investor.user?.name);
+    
     res.status(200).json({
       success: true,
       data: investor,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error in getInvestorById:", error);
     res.status(500).json({
       success: false,
       message: error.message,
@@ -351,6 +357,43 @@ export const getInterestedInvestors = async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message
+    });
+  }
+};
+// Get investor by User ID
+export const getInvestorByUserId = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    console.log("Looking for investor with User ID:", userId);
+    
+    const investor = await InvestorProfile.findOne({
+      where: { userId },
+      include: [
+        {
+          model: User,
+          as: "user",
+          attributes: ["id", "name", "email"],
+        },
+      ],
+    });
+    
+    if (!investor) {
+      return res.status(404).json({
+        success: false,
+        message: "Investor not found",
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      data: investor,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
     });
   }
 };

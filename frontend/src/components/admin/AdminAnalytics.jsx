@@ -319,66 +319,11 @@ const AdminAnalytics = () => {
       {analytics && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <Users className="h-6 w-6 text-blue-600" />
-                </div>
-                <TrendingUp className="h-5 w-5 text-green-500" />
-              </div>
-              <p className="text-2xl font-bold text-gray-900">{analytics.activeUsers || 0}</p>
-              <p className="text-sm text-gray-500">Active Users (Last 30 days)</p>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <Building2 className="h-6 w-6 text-green-600" />
-                </div>
-                <TrendingUp className="h-5 w-5 text-green-500" />
-              </div>
-              <p className="text-2xl font-bold text-gray-900">{analytics.startupTrends?.reduce((sum, s) => sum + s.count, 0) || 0}</p>
-              <p className="text-sm text-gray-500">Total Startups Created</p>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-purple-100 rounded-lg">
-                  <FileText className="h-6 w-6 text-purple-600" />
-                </div>
-                <TrendingUp className="h-5 w-5 text-green-500" />
-              </div>
-              <p className="text-2xl font-bold text-gray-900">{analytics.ndaTrends?.reduce((sum, n) => sum + n.count, 0) || 0}</p>
-              <p className="text-sm text-gray-500">Total NDAs Signed</p>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-yellow-100 rounded-lg">
-                  <DollarSign className="h-6 w-6 text-yellow-600" />
-                </div>
-                <TrendingUp className="h-5 w-5 text-green-500" />
-              </div>
-              <p className="text-2xl font-bold text-gray-900">
-                ${((analytics.investmentStats?.totalFundingSeeking || 0) / 1000000).toFixed(1)}M
-              </p>
-              <p className="text-sm text-gray-500">Total Funding Seeking</p>
-            </div>
           </div>
 
           {/* Charts Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            {/* User Growth Chart */}
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-              <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                <Users className="h-5 w-5 text-blue-600 mr-2" />
-                User Growth Trends
-              </h2>
-              <div className="h-80">
-                <Line data={getUserTrendsData()} options={lineChartOptions} />
-              </div>
-            </div>
-
+        
             {/* Startup Creation Chart */}
             <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
               <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
@@ -424,7 +369,7 @@ const AdminAnalytics = () => {
             </div>
 
             {/* Investment Stats */}
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+            {/* <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
               <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
                 <DollarSign className="h-5 w-5 text-yellow-600 mr-2" />
                 Investment Statistics
@@ -447,7 +392,7 @@ const AdminAnalytics = () => {
                   <p className="text-2xl font-bold text-green-600">{analytics.investmentStats?.fundedStartups || 0}</p>
                 </div>
               </div>
-            </div>
+            </div> */}
           </div>
         </>
       )}

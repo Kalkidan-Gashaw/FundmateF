@@ -1,60 +1,7 @@
 import Resource from "../models/Resource.js";
+import Message from "../models/Message.js";
 import User from "../models/User.js";
 import { Op } from "sequelize";
-
-// Get all resources (public + mentor's own)
-export const getAllResources = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const { category, type, search } = req.query;
-    
-    const whereConditions = {
-      [Op.or]: [
-        { isPublic: true },
-        { authorId: userId }
-      ]
-    };
-    
-    if (category && category !== "all") {
-      whereConditions.category = category;
-    }
-    
-    if (type && type !== "all") {
-      whereConditions.type = type;
-    }
-    
-    if (search && search.trim() !== "") {
-      whereConditions[Op.or] = [
-        { title: { [Op.iLike]: `%${search.trim()}%` } },
-        { description: { [Op.iLike]: `%${search.trim()}%` } },
-      ];
-    }
-    
-    const resources = await Resource.findAll({
-      where: whereConditions,
-      include: [
-        {
-          model: User,
-          as: "author",
-          attributes: ["id", "name", "email"],
-        },
-      ],
-      order: [["views", "DESC"]],
-    });
-    
-    res.status(200).json({
-      success: true,
-      count: resources.length,
-      data: resources,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
 
 // Get single resource by ID
 export const getResourceById = async (req, res) => {
@@ -94,20 +41,89 @@ export const getResourceById = async (req, res) => {
   }
 };
 
-// Create a new resource (only mentors)
+// Get resources (mentor sees their own, entrepreneur sees resources shared with them)
+export const getAllResources = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    
+    let whereConditions = {};
+    
+    if (userRole === 'mentor') {
+      // Mentors see their own resources
+      whereConditions.authorId = userId;
+    } else if (userRole === 'entrepreneur') {
+      // Entrepreneurs see resources shared with them (menteeId = their user ID)
+      whereConditions.menteeId = userId;
+    } else {
+      // Investors and admins see public resources
+      whereConditions.isPublic = true;
+    }
+    
+    const resources = await Resource.findAll({
+      where: whereConditions,
+      include: [
+        {
+          model: User,
+          as: "author",
+          attributes: ["id", "name", "email"],
+        },
+      ],
+      order: [["createdAt", "DESC"]],
+    });
+    
+    res.status(200).json({
+      success: true,
+      count: resources.length,
+      data: resources,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// Create resource (for mentors)
 export const createResource = async (req, res) => {
   try {
     const userId = req.user.id;
-    const resourceData = req.body;
+    const { menteeId, ...resourceData } = req.body;
+    
+    if (!menteeId) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select a mentee to share with",
+      });
+    }
     
     const resource = await Resource.create({
       ...resourceData,
       authorId: userId,
+      menteeId: menteeId,
+    });
+    
+    // Get mentor name
+    const mentor = await User.findByPk(userId, {
+      attributes: ["name"],
+    });
+    
+    // Create a chat message to the mentee with the ACTUAL resource URL
+    const actualResourceUrl = resourceData.url;
+    const messageText = `📚 **New Resource Shared**\n\n**${resourceData.title}**\n${resourceData.description || "No description"}\n\n📎 Type: ${resourceData.type}\n📁 Category: ${resourceData.category}\n\n🔗 ${actualResourceUrl}`;
+    
+    await Message.create({
+      senderId: userId,
+      receiverId: menteeId,
+      message: messageText,
+      isRead: false,
     });
     
     res.status(201).json({
       success: true,
-      message: "Resource created successfully",
+      message: "Resource shared successfully. The mentee will see it in chat.",
       data: resource,
     });
   } catch (error) {

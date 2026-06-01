@@ -37,9 +37,12 @@ import AdminBroadcast from "./components/admin/AdminBroadcast";
 
 import NotificationsPage from "./components/common/NotificationsPage";
 import AdminSettings from "./components/admin/AdminSettings";
-import EntrepreneurNdaRequests from "./components/entrepreneur/EntreprenuerNdaRequests";
+// Correct
+import EntrepreneurNdaRequests from "./components/entrepreneur/EntrepreneurNdaRequests";
 import VerifyEmail from "./components/auth/VerifyEmail";
 import FloatingAssistant from "./components/FloatingAssistant";
+import InvestorProfile from "./components/entrepreneur/InvestorProfile";
+import MentorProfile from "./components/entrepreneur/MentorProfile";
 
 function AppContent() {
   const { user, loading } = useContext(AuthContext);
@@ -261,7 +264,7 @@ function AppContent() {
           }
         />
         <Route
-          path="/mentor/resources"
+          path="/resources"
           element={
             isAuthenticated && user?.role === "mentor" ? (
               <Resources />
@@ -356,6 +359,26 @@ function AppContent() {
           element={
             isAuthenticated && user?.role === "admin" ? (
               <AdminSettings />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/entrepreneur/investor/:id"
+          element={
+            isAuthenticated && user?.role === "entrepreneur" ? (
+              <InvestorProfile />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/entrepreneur/mentor/:id"
+          element={
+            isAuthenticated && user?.role === "entrepreneur" ? (
+              <MentorProfile />
             ) : (
               <Navigate to="/login" />
             )

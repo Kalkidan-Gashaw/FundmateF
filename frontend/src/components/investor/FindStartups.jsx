@@ -419,10 +419,10 @@ const FindStartups = () => {
                           <Eye className="h-4 w-4" />
                           <span>View Details</span>
                         </button>
-                        <button className="flex items-center space-x-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                        {/* <button className="flex items-center space-x-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
                           <Heart className="h-4 w-4" />
                           <span>Express Interest</span>
-                        </button>
+                        </button> */}
                       </div>
                     </div>
                   </div>

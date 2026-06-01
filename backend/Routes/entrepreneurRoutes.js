@@ -4,7 +4,6 @@ import {
   createStartupProfile,
   getMyStartup,
   updateStartupProfile,
-
   findInvestors,
   searchInvestors,
   getInvestorById,
@@ -25,7 +24,9 @@ router.put("/startup/:id", updateStartupProfile);
 // Investor discovery routes
 router.get("/investors", findInvestors);
 router.get("/investors/search", searchInvestors);
-router.get("/investors/:id", getInvestorById);
+
 router.get('/interested-investors', getInterestedInvestors);
+router.get("/investor/:id", getInvestorById);
+
 
 export default router;

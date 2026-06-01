@@ -130,8 +130,8 @@ export const getMentorById = async (req, res) => {
       include: [
         {
           model: User,
-         as: "user",
-          attributes: ["id", "name", "email"],
+          as: "user",
+          attributes: ["id", "name", "email", "createdAt"],
         },
       ],
     });
@@ -155,8 +155,6 @@ export const getMentorById = async (req, res) => {
     });
   }
 };
-
-// ============ Mentorship Request Controllers ============
 
 // Entrepreneur requests mentorship
 export const requestMentorship = async (req, res) => {
@@ -502,6 +500,117 @@ export const getMentorByUserId = async (req, res) => {
     res.status(200).json({
       success: true,
       data: mentor,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// Get all mentors with match scores for entrepreneur
+export const getAllMentorsWithMatches = async (req, res) => {
+  try {
+    const { expertise, search } = req.query;
+    const entrepreneurId = req.user.id;
+    
+    // Get entrepreneur's startup
+    const startup = await StartupProfile.findOne({ 
+      where: { userId: entrepreneurId } 
+    });
+    
+    const whereConditions = { isAvailable: true };
+    const userWhereConditions = {};
+    
+    if (search && search.trim() !== "") {
+      userWhereConditions.name = { [Op.iLike]: `%${search.trim()}%` };
+    }
+    
+    if (expertise && expertise !== "all") {
+      whereConditions.expertise = { [Op.contains]: [expertise] };
+    }
+    
+    const mentors = await MentorProfile.findAll({
+      where: whereConditions,
+      include: [
+        {
+          model: User,
+          as: "user",
+          where: Object.keys(userWhereConditions).length > 0 ? userWhereConditions : undefined,
+          attributes: ["id", "name", "email"],
+        },
+      ],
+      order: [["rating", "DESC"]],
+    });
+    
+    // Calculate match scores if startup exists
+    let mentorsWithScores = mentors.map(mentor => {
+      let matchScore = 0;
+      
+      if (startup) {
+        let score = 0;
+        let maxScore = 0;
+        
+        // Expertise match (50 points)
+        if (mentor.expertise && mentor.expertise.length > 0) {
+          const expertiseMatch = mentor.expertise.some(exp => 
+            exp.toLowerCase().includes(startup.sector?.toLowerCase()) ||
+            startup.sector?.toLowerCase().includes(exp.toLowerCase())
+          );
+          if (expertiseMatch) {
+            score += 50;
+          }
+          maxScore += 50;
+        } else {
+          maxScore += 50;
+        }
+        
+        // Industry match (30 points)
+        if (mentor.industry && mentor.industry.length > 0) {
+          const industryMatch = mentor.industry.some(ind => 
+            ind.toLowerCase().includes(startup.sector?.toLowerCase())
+          );
+          if (industryMatch) {
+            score += 30;
+          }
+          maxScore += 30;
+        } else {
+          maxScore += 30;
+        }
+        
+        // Experience match (20 points)
+        if (mentor.yearsOfExperience) {
+          if (mentor.yearsOfExperience >= 5) {
+            score += 20;
+          } else if (mentor.yearsOfExperience >= 3) {
+            score += 10;
+          }
+          maxScore += 20;
+        } else {
+          maxScore += 20;
+        }
+        
+        matchScore = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
+      }
+      
+      return {
+        ...mentor.toJSON(),
+        matchScore,
+      };
+    });
+    
+    // Sort by match score (highest first) if startup exists
+    if (startup) {
+      mentorsWithScores.sort((a, b) => b.matchScore - a.matchScore);
+    }
+    
+    res.status(200).json({
+      success: true,
+      count: mentorsWithScores.length,
+      data: mentorsWithScores,
+      startup: startup || null,
     });
   } catch (error) {
     console.error(error);

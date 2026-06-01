@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { X, Upload, Loader, CheckCircle, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, Upload, Loader, CheckCircle, AlertCircle, Users } from "lucide-react";
 import API from "../../services/api";
 
 const ShareResourceModal = ({ isOpen, onClose, onSuccess }) => {
@@ -10,8 +10,10 @@ const ShareResourceModal = ({ isOpen, onClose, onSuccess }) => {
     description: "",
     url: "",
     duration: "",
-    isPublic: true,
+    menteeId: "",
   });
+  const [mentees, setMentees] = useState([]);
+  const [loadingMentees, setLoadingMentees] = useState(true);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
 
@@ -19,16 +21,45 @@ const ShareResourceModal = ({ isOpen, onClose, onSuccess }) => {
     "Pitching", "Strategy", "Fundraising", "Research", "Finance", "Product", "Marketing", "Sales", "Operations", "Legal"
   ];
 
+  useEffect(() => {
+    if (isOpen) {
+      fetchMentees();
+    }
+  }, [isOpen]);
+
+  const fetchMentees = async () => {
+    setLoadingMentees(true);
+    try {
+      const response = await API.get("/mentor/active-mentees");
+      setMentees(response.data.data || []);
+    } catch (error) {
+      console.error("Error fetching mentees:", error);
+    } finally {
+      setLoadingMentees(false);
+    }
+  };
+
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: value,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!formData.title.trim() || !formData.url.trim() || !formData.category) {
+      setMessage({ type: "error", text: "Please fill in all required fields" });
+      return;
+    }
+
+    if (!formData.menteeId) {
+      setMessage({ type: "error", text: "Please select a mentee to share with" });
+      return;
+    }
+
     setLoading(true);
     setMessage(null);
 
@@ -75,6 +106,36 @@ const ShareResourceModal = ({ isOpen, onClose, onSuccess }) => {
               {message.text}
             </div>
           )}
+
+          <div>
+            <label className="block text-gray-700 font-medium mb-2">Share with Mentee *</label>
+            <div className="relative">
+              <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <select
+                name="menteeId"
+                value={formData.menteeId}
+                onChange={handleChange}
+                required
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 appearance-none bg-white"
+              >
+                <option value="">Select a mentee...</option>
+                {loadingMentees ? (
+                  <option disabled>Loading mentees...</option>
+                ) : mentees.length === 0 ? (
+                  <option disabled>No active mentees found</option>
+                ) : (
+                  mentees.map((mentee) => (
+                    <option key={mentee.id} value={mentee.entrepreneur?.id}>
+                      {mentee.entrepreneur?.name} - {mentee.topic}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              The resource will appear in your chat with this mentee.
+            </p>
+          </div>
 
           <div>
             <label className="block text-gray-700 font-medium mb-2">Title *</label>
@@ -159,17 +220,6 @@ const ShareResourceModal = ({ isOpen, onClose, onSuccess }) => {
               />
             </div>
           )}
-
-          <div className="flex items-center space-x-3">
-            <input
-              type="checkbox"
-              name="isPublic"
-              checked={formData.isPublic}
-              onChange={handleChange}
-              className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
-            />
-            <label className="text-gray-700">Make this resource public (visible to all users)</label>
-          </div>
 
           <div className="flex justify-end pt-4">
             <button

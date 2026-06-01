@@ -19,12 +19,14 @@ import {
   GraduationCap,
   Heart,
   CheckCircle,
-  DollarSign
+  DollarSign,
+  Target
 } from "lucide-react";
 
 const FindMentors = () => {
   const navigate = useNavigate();
   const [mentors, setMentors] = useState([]);
+  const [startup, setStartup] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
@@ -33,20 +35,91 @@ const FindMentors = () => {
   });
 
   useEffect(() => {
-    fetchMentors();
+    fetchMentorsWithMatches();
   }, []);
 
-  const fetchMentors = async () => {
+  const fetchMentorsWithMatches = async () => {
     setLoading(true);
     try {
+      // Get entrepreneur's startup profile for matching
+      const startupRes = await API.get("/entrepreneur/startup");
+      if (startupRes.data.data) {
+        setStartup(startupRes.data.data);
+      }
+      
+      // Get all mentors
       const response = await API.get("/mentor/all");
-      console.log("Mentors data:", response.data.data);
-      setMentors(response.data.data);
+      let mentorsData = response.data.data;
+      
+      // Calculate match scores if startup exists
+      if (startupRes.data.data) {
+        mentorsData = mentorsData.map(mentor => ({
+          ...mentor,
+          matchScore: calculateMatchScore(mentor, startupRes.data.data)
+        }));
+        // Sort by match score (highest first)
+        mentorsData.sort((a, b) => b.matchScore - a.matchScore);
+      }
+      
+      setMentors(mentorsData);
     } catch (error) {
       console.error("Error fetching mentors:", error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const calculateMatchScore = (mentor, startup) => {
+    let score = 0;
+    let maxScore = 0;
+    
+    // Expertise match (50 points)
+    if (mentor.expertise && mentor.expertise.length > 0) {
+      const expertiseMatch = mentor.expertise.some(exp => 
+        exp.toLowerCase().includes(startup.sector?.toLowerCase()) ||
+        startup.sector?.toLowerCase().includes(exp.toLowerCase())
+      );
+      if (expertiseMatch) {
+        score += 50;
+      }
+      maxScore += 50;
+    } else {
+      maxScore += 50;
+    }
+    
+    // Industry match (30 points)
+    if (mentor.industry && mentor.industry.length > 0) {
+      const industryMatch = mentor.industry.some(ind => 
+        ind.toLowerCase().includes(startup.sector?.toLowerCase())
+      );
+      if (industryMatch) {
+        score += 30;
+      }
+      maxScore += 30;
+    } else {
+      maxScore += 30;
+    }
+    
+    // Experience match (20 points)
+    if (mentor.yearsOfExperience && startup.teamSize) {
+      if (mentor.yearsOfExperience >= 5) {
+        score += 20;
+      } else if (mentor.yearsOfExperience >= 3) {
+        score += 10;
+      }
+      maxScore += 20;
+    } else {
+      maxScore += 20;
+    }
+    
+    return maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
+  };
+
+  const getMatchColor = (score) => {
+    if (score >= 80) return "bg-green-100 text-green-800";
+    if (score >= 60) return "bg-yellow-100 text-yellow-800";
+    if (score >= 40) return "bg-orange-100 text-orange-800";
+    return "bg-gray-100 text-gray-600";
   };
 
   const handleSearch = async () => {
@@ -57,7 +130,18 @@ const FindMentors = () => {
       if (filters.search && filters.search.trim()) params.append("search", filters.search.trim());
       
       const response = await API.get(`/mentor/all?${params.toString()}`);
-      setMentors(response.data.data);
+      let mentorsData = response.data.data;
+      
+      // Recalculate match scores
+      if (startup) {
+        mentorsData = mentorsData.map(mentor => ({
+          ...mentor,
+          matchScore: calculateMatchScore(mentor, startup)
+        }));
+        mentorsData.sort((a, b) => b.matchScore - a.matchScore);
+      }
+      
+      setMentors(mentorsData);
     } catch (error) {
       console.error("Error searching mentors:", error);
       setMentors([]);
@@ -76,7 +160,7 @@ const FindMentors = () => {
       expertise: "all",
       search: "",
     });
-    fetchMentors();
+    fetchMentorsWithMatches();
   };
 
   const getExpertiseList = () => {
@@ -94,7 +178,6 @@ const FindMentors = () => {
   const renderStars = (rating) => {
     const stars = [];
     const fullStars = Math.floor(rating);
-    
     for (let i = 0; i < fullStars; i++) {
       stars.push(<Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />);
     }
@@ -136,6 +219,11 @@ const FindMentors = () => {
               </p>
             </div>
           </div>
+          {startup && (
+            <div className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+              Matching based on: {startup.sector}
+            </div>
+          )}
         </div>
       </div>
 
@@ -236,7 +324,14 @@ const FindMentors = () => {
                       {mentor.user?.name?.charAt(0) || "M"}
                     </div>
                     <div>
-                      <h3 className="font-bold text-gray-900 text-lg">{mentor.user?.name}</h3>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-bold text-gray-900 text-lg">{mentor.user?.name}</h3>
+                        {mentor.matchScore !== undefined && (
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getMatchColor(mentor.matchScore)}`}>
+                            {mentor.matchScore}% Match
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-gray-500">{mentor.currentRole || "Mentor"}</p>
                       {mentor.company && (
                         <p className="text-xs text-gray-400">{mentor.company}</p>

@@ -11,7 +11,12 @@ import {
   Loader,
   AlertCircle,
   Eye,
-  User
+  User,
+  Star,
+  Briefcase,
+  Award,
+  Heart,
+  DollarSign
 } from "lucide-react";
 
 const MyMentorshipRequests = () => {
@@ -19,6 +24,7 @@ const MyMentorshipRequests = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState(null);
+  const [mentorProfiles, setMentorProfiles] = useState({});
 
   useEffect(() => {
     fetchRequests();
@@ -27,7 +33,24 @@ const MyMentorshipRequests = () => {
   const fetchRequests = async () => {
     try {
       const response = await API.get("/mentor/my-requests");
-      setRequests(response.data.data);
+      const requestsData = response.data.data || [];
+      setRequests(requestsData);
+      
+      // Fetch mentor profiles for each request
+      for (const request of requestsData) {
+        if (request.mentorId && !mentorProfiles[request.mentorId]) {
+          try {
+            // Get mentor profile by user ID
+            const mentorRes = await API.get(`/mentor/user/${request.mentorId}`);
+            setMentorProfiles(prev => ({
+              ...prev,
+              [request.mentorId]: mentorRes.data.data
+            }));
+          } catch (err) {
+            console.error("Error fetching mentor profile:", err);
+          }
+        }
+      }
     } catch (error) {
       console.error("Error fetching requests:", error);
       setMessage({ type: "error", text: "Error loading your requests" });
@@ -49,6 +72,19 @@ const MyMentorshipRequests = () => {
       default:
         return { icon: <Clock className="h-4 w-4" />, text: status, color: "bg-gray-100 text-gray-800" };
     }
+  };
+
+  const renderStars = (rating) => {
+    const stars = [];
+    const fullStars = Math.floor(rating || 0);
+    for (let i = 0; i < fullStars; i++) {
+      stars.push(<Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />);
+    }
+    const emptyStars = 5 - stars.length;
+    for (let i = 0; i < emptyStars; i++) {
+      stars.push(<Star key={`empty-${i}`} className="h-4 w-4 text-gray-300" />);
+    }
+    return stars;
   };
 
   if (loading) {
@@ -76,9 +112,7 @@ const MyMentorshipRequests = () => {
           </div>
           <div>
             <h1 className="text-3xl font-bold text-gray-900">My Mentorship Requests</h1>
-            <p className="text-gray-600 mt-1">
-              Track your mentorship requests
-            </p>
+            <p className="text-gray-600 mt-1">Track your mentorship requests</p>
           </div>
         </div>
       </div>
@@ -100,9 +134,7 @@ const MyMentorshipRequests = () => {
             <MessageSquare className="h-10 w-10 text-gray-400" />
           </div>
           <h3 className="text-xl font-bold text-gray-900 mb-2">No Mentorship Requests</h3>
-          <p className="text-gray-600">
-            You haven't sent any mentorship requests yet.
-          </p>
+          <p className="text-gray-600">You haven't sent any mentorship requests yet.</p>
           <button
             onClick={() => navigate("/entrepreneur/find-mentors")}
             className="mt-4 px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
@@ -114,6 +146,8 @@ const MyMentorshipRequests = () => {
         <div className="space-y-4">
           {requests.map((request) => {
             const status = getStatusBadge(request.status);
+            const mentorProfile = mentorProfiles[request.mentorId];
+            
             return (
               <div key={request.id} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
                 <div className="p-6">
@@ -125,6 +159,12 @@ const MyMentorshipRequests = () => {
                       <div>
                         <h3 className="font-bold text-gray-900 text-lg">{request.mentor?.name}</h3>
                         <p className="text-sm text-gray-500">Mentor</p>
+                        {mentorProfile && (
+                          <div className="flex items-center gap-2 mt-1">
+                            {renderStars(mentorProfile.rating)}
+                            <span className="text-xs text-gray-500">({mentorProfile.totalSessions || 0} sessions)</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className={`flex items-center space-x-1 px-3 py-1 rounded-full text-sm font-medium ${status.color}`}>
@@ -172,9 +212,31 @@ const MyMentorshipRequests = () => {
                     </div>
                   )}
 
+                  {/* Expertise Tags */}
+                  {mentorProfile?.expertise && mentorProfile.expertise.length > 0 && (
+                    <div className="mt-3 mb-3">
+                      <div className="flex flex-wrap gap-1">
+                        {mentorProfile.expertise.slice(0, 3).map((exp) => (
+                          <span key={exp} className="px-2 py-1 bg-purple-50 text-purple-600 text-xs rounded-full">
+                            {exp}
+                          </span>
+                        ))}
+                        {mentorProfile.expertise.length > 3 && (
+                          <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                            +{mentorProfile.expertise.length - 3}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="mt-4 flex justify-end">
                     <button
-                      onClick={() => navigate(`/entrepreneur/mentor/${request.mentorId}`)}
+                      onClick={() => {
+                        // Use the mentorProfile id if available, otherwise use mentorId
+                        const profileId = mentorProfile?.id || request.mentorId;
+                        navigate(`/entrepreneur/mentor/${profileId}`);
+                      }}
                       className="flex items-center space-x-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
                     >
                       <Eye className="h-4 w-4" />

@@ -409,19 +409,7 @@ const FindInvestors = () => {
                           <Eye className="h-4 w-4" />
                           <span>View Profile</span>
                         </button>
-                        <button 
-                          onClick={() => {
-                            const investorUserId = investor.user?.id || investor.User?.id;
-                            if (investorUserId) {
-                              // Navigate to contact or message page
-                              console.log("Contact investor:", investorUserId);
-                            }
-                          }}
-                          className="flex items-center space-x-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                        >
-                          <Mail className="h-4 w-4" />
-                          <span>Contact</span>
-                        </button>
+                        
                       </div>
                     </div>
                   </div>

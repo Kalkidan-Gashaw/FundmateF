@@ -87,6 +87,7 @@ const Register = () => {
         password: formData.password,
         role: formData.role,
         adminSecret: formData.adminSecret,
+        
       });
       
       setRegisteredEmail(formData.email);

@@ -1,13 +1,17 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Paperclip, File, X, Loader } from "lucide-react";
-import API from "../../services/api";
+import { Send, Paperclip, File, X, Loader, AlertCircle } from "lucide-react";
 
 const ChatInput = ({ onSendMessage, onTyping, disabled, onSendFile, uploading }) => {
   const [message, setMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [fileError, setFileError] = useState(null);
   const typingTimeoutRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  const allowedExtensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', 
+    '.txt', '.csv', '.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', 
+    '.zip', '.rar', '.mp3', '.wav', '.mp4', '.mpeg'];
 
   const handleSend = () => {
     if (message.trim() && !disabled) {
@@ -48,7 +52,19 @@ const ChatInput = ({ onSendMessage, onTyping, disabled, onSendFile, uploading })
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setSelectedFile(file);
+      // Validate file extension
+      const ext = '.' + file.name.split('.').pop().toLowerCase();
+      if (allowedExtensions.includes(ext)) {
+        setSelectedFile(file);
+        setFileError(null);
+      } else {
+        setFileError(`Invalid file type. Allowed: ${allowedExtensions.join(', ')}`);
+        setSelectedFile(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+        setTimeout(() => setFileError(null), 5000);
+      }
     }
   };
 
@@ -57,12 +73,15 @@ const ChatInput = ({ onSendMessage, onTyping, disabled, onSendFile, uploading })
     
     const formData = new FormData();
     formData.append("file", selectedFile);
-    formData.append("receiverId", onSendFile.receiverId);
     
-    await onSendFile.send(formData);
-    setSelectedFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+    if (typeof onSendFile === 'function') {
+      await onSendFile(formData);
+      setSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    } else {
+      console.error("onSendFile is not a function");
     }
   };
 
@@ -76,11 +95,20 @@ const ChatInput = ({ onSendMessage, onTyping, disabled, onSendFile, uploading })
   const formatFileSize = (bytes) => {
     if (bytes < 1024) return bytes + " B";
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
-    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+    if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+    return (bytes / (1024 * 1024 * 1024)).toFixed(1) + " GB";
   };
 
   return (
     <div className="p-4 border-t border-gray-200 bg-white">
+      {/* File Error Message */}
+      {fileError && (
+        <div className="mb-3 p-2 bg-red-50 text-red-700 text-xs rounded-lg flex items-center">
+          <AlertCircle className="h-4 w-4 mr-2" />
+          {fileError}
+        </div>
+      )}
+
       {/* File Preview */}
       {selectedFile && (
         <div className="mb-3 p-3 bg-gray-50 rounded-lg flex items-center justify-between">
@@ -110,18 +138,26 @@ const ChatInput = ({ onSendMessage, onTyping, disabled, onSendFile, uploading })
       )}
 
       <div className="flex items-center space-x-2">
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className="p-2 text-gray-400 hover:text-gray-600 transition rounded-full hover:bg-gray-100"
-          disabled={disabled || uploading}
-        >
-          <Paperclip className="h-5 w-5" />
-        </button>
+        <div className="relative">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="p-2 text-gray-400 hover:text-gray-600 transition rounded-full hover:bg-gray-100"
+            disabled={disabled || uploading}
+            title="Attach file"
+          >
+            <Paperclip className="h-5 w-5" />
+          </button>
+          {/* Tooltip for allowed files */}
+          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none">
+            Allowed: PDF, DOC, XLS, PPT, TXT, CSV, Images, ZIP, MP3, MP4
+          </div>
+        </div>
         <input
           ref={fileInputRef}
           type="file"
           onChange={handleFileSelect}
           className="hidden"
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.jpg,.jpeg,.png,.gif,.webp,.svg,.zip,.rar,.mp3,.wav,.mp4,.mpeg"
         />
         <textarea
           value={message}
@@ -139,6 +175,11 @@ const ChatInput = ({ onSendMessage, onTyping, disabled, onSendFile, uploading })
         >
           <Send className="h-5 w-5" />
         </button>
+      </div>
+      
+      {/* Allowed file types hint */}
+      <div className="mt-2 text-xs text-gray-400 text-center">
+        Supported files: PDF, Word, Excel, PowerPoint, Images, Text, CSV, ZIP, MP3, MP4 (Max 50MB)
       </div>
     </div>
   );

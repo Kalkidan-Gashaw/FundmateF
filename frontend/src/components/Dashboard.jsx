@@ -46,26 +46,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Stats Section */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16 px-4">
-        <div className="text-center p-6 bg-white rounded-xl shadow-lg">
-          <div className="text-3xl font-bold text-blue-600 mb-2">50+</div>
-          <div className="text-gray-600">Startups</div>
-        </div>
-        <div className="text-center p-6 bg-white rounded-xl shadow-lg">
-          <div className="text-3xl font-bold text-green-600 mb-2">20+</div>
-          <div className="text-gray-600">Investors</div>
-        </div>
-        <div className="text-center p-6 bg-white rounded-xl shadow-lg">
-          <div className="text-3xl font-bold text-purple-600 mb-2">$50k+</div>
-          <div className="text-gray-600">Funds Raised</div>
-        </div>
-        <div className="text-center p-6 bg-white rounded-xl shadow-lg">
-          <div className="text-3xl font-bold text-yellow-600 mb-2">30+</div>
-          <div className="text-gray-600">Successful Matches</div>
-        </div>
-      </div>
-
       {/* Features Section */}
       <div className="px-4 mb-20">
         <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">How It Works</h2>
@@ -78,15 +58,15 @@ const Dashboard = () => {
             <ul className="space-y-3 text-gray-600">
               <li className="flex items-center">
                 <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-                Create startup profile
+                Create your startup profile
               </li>
               <li className="flex items-center">
                 <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-                Find perfect investors
+                Find matching investors
               </li>
               <li className="flex items-center">
                 <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-                Manage connections
+                Request mentorship from experts
               </li>
             </ul>
           </div>
@@ -103,11 +83,11 @@ const Dashboard = () => {
               </li>
               <li className="flex items-center">
                 <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-                Smart matching algorithm
+                Smart matching based on your preferences
               </li>
               <li className="flex items-center">
                 <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-                Track portfolio
+                Sign NDAs to access confidential info
               </li>
             </ul>
           </div>
@@ -116,19 +96,19 @@ const Dashboard = () => {
             <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center mb-6">
               <Target className="h-7 w-7 text-purple-600" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Smart Matching</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-4">For Mentors</h3>
             <ul className="space-y-3 text-gray-600">
               <li className="flex items-center">
                 <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-                Industry-specific matching
+                Share your expertise with entrepreneurs
               </li>
               <li className="flex items-center">
                 <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-                Funding stage compatibility
+                Guide startups to success
               </li>
               <li className="flex items-center">
                 <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-                Success rate tracking
+                Build your mentoring reputation
               </li>
             </ul>
           </div>
@@ -154,7 +134,7 @@ const Dashboard = () => {
               </div>
               <div className="flex items-center">
                 <MessageSquare className="h-5 w-5 text-blue-600 mr-2" />
-                <span>Secure Communication</span>
+                <span>Real-time Chat & Communication</span>
               </div>
               <div className="flex items-center">
                 <Users className="h-5 w-5 text-blue-600 mr-2" />
@@ -165,7 +145,7 @@ const Dashboard = () => {
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-white p-4 rounded-xl text-center">
               <Award className="h-8 w-8 text-yellow-600 mx-auto mb-2" />
-              <p className="font-bold text-gray-900">Trusted Platform</p>
+              <p className="font-bold text-gray-900">Verified Investors</p>
             </div>
             <div className="bg-white p-4 rounded-xl text-center">
               <Globe className="h-8 w-8 text-green-600 mx-auto mb-2" />
@@ -177,7 +157,7 @@ const Dashboard = () => {
             </div>
             <div className="bg-white p-4 rounded-xl text-center">
               <Calendar className="h-8 w-8 text-purple-600 mx-auto mb-2" />
-              <p className="font-bold text-gray-900">Schedule Meetings</p>
+              <p className="font-bold text-gray-900">Schedule Sessions</p>
             </div>
           </div>
         </div>

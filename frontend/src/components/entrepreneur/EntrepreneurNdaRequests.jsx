@@ -12,11 +12,8 @@ import {
   Send,
   Loader,
   AlertCircle,
-  Mail,
   Building2,
-  Calendar,
-  User,
-  FileText
+  Users
 } from "lucide-react";
 
 const EntrepreneurNdaRequests = () => {
@@ -40,14 +37,16 @@ const EntrepreneurNdaRequests = () => {
       const startupRes = await API.get("/entrepreneur/startup");
       if (startupRes.data.data) {
         setStartup(startupRes.data.data);
+        // Only fetch requests if startup exists
+        const requestsRes = await API.get("/nda/entrepreneur/requests");
+        setRequests(requestsRes.data.data);
+      } else {
+        setStartup(null);
       }
-
-      // Get NDA requests for entrepreneur's startup
-      const requestsRes = await API.get("/nda/entrepreneur/requests");
-      setRequests(requestsRes.data.data);
     } catch (error) {
       if (error.response?.status === 404) {
-        navigate("/startup/create");
+        // No startup found - don't redirect, just show message
+        setStartup(null);
       } else {
         console.error("Error fetching requests:", error);
         setMessage({ type: "error", text: "Error loading requests" });
@@ -116,8 +115,34 @@ const EntrepreneurNdaRequests = () => {
     );
   }
 
+  // Show message if no startup exists
+  if (!startup) {
+    return (
+      <div className="max-w-2xl mx-auto text-center py-12">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-8">
+          <Building2 className="h-12 w-12 text-yellow-600 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">No Startup Found</h2>
+          <p className="text-gray-600 mb-6">
+            You need to create a startup profile before you can receive NDA requests from investors.
+          </p>
+          <button
+            onClick={() => navigate("/startup/create")}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Create Your Startup
+          </button>
+          <button
+            onClick={() => navigate("/entrepreneur-dashboard")}
+            className="ml-3 px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const pendingRequests = requests.filter(r => r.status === "pending");
-  const allRequests = requests;
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -144,17 +169,15 @@ const EntrepreneurNdaRequests = () => {
       </div>
 
       {/* Startup Info Banner */}
-      {startup && (
-        <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
-          <div className="flex items-center space-x-3">
-            <Building2 className="h-5 w-5 text-blue-600" />
-            <div>
-              <p className="text-sm text-gray-600">Your Startup</p>
-              <p className="font-semibold text-gray-900">{startup.startupName}</p>
-            </div>
+      <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
+        <div className="flex items-center space-x-3">
+          <Building2 className="h-5 w-5 text-blue-600" />
+          <div>
+            <p className="text-sm text-gray-600">Your Startup</p>
+            <p className="font-semibold text-gray-900">{startup.startupName}</p>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Message */}
       {message && (
@@ -185,7 +208,7 @@ const EntrepreneurNdaRequests = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm">Total Requests</p>
-              <p className="text-3xl font-bold text-blue-600">{allRequests.length}</p>
+              <p className="text-3xl font-bold text-blue-600">{requests.length}</p>
             </div>
             <div className="p-3 bg-blue-100 rounded-full">
               <Users className="h-6 w-6 text-blue-600" />
@@ -194,20 +217,8 @@ const EntrepreneurNdaRequests = () => {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex space-x-4 mb-6 border-b border-gray-200">
-        <button
-          onClick={() => {
-            setRequests(allRequests);
-          }}
-          className="pb-3 px-4 font-medium text-blue-600 border-b-2 border-blue-600"
-        >
-          All Requests ({allRequests.length})
-        </button>
-      </div>
-
       {/* Requests List */}
-      {allRequests.length === 0 ? (
+      {requests.length === 0 ? (
         <div className="bg-white rounded-xl shadow-lg p-12 text-center">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-4">
             <Shield className="h-10 w-10 text-gray-400" />
@@ -219,7 +230,7 @@ const EntrepreneurNdaRequests = () => {
         </div>
       ) : (
         <div className="space-y-4">
-          {allRequests.map((request) => (
+          {requests.map((request) => (
             <div key={request.id} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
@@ -328,11 +339,6 @@ const EntrepreneurNdaRequests = () => {
                         NDA signed on {new Date(request.signedAt).toLocaleDateString()}
                       </span>
                     </div>
-                    {request.expiresAt && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        Expires: {new Date(request.expiresAt).toLocaleDateString()}
-                      </p>
-                    )}
                   </div>
                 )}
               </div>
@@ -340,26 +346,6 @@ const EntrepreneurNdaRequests = () => {
           ))}
         </div>
       )}
-
-      {/* Info Box */}
-      <div className="mt-8 p-4 bg-blue-50 rounded-xl border border-blue-200">
-        <div className="flex items-start space-x-3">
-          <Shield className="h-5 w-5 text-blue-600 mt-0.5" />
-          <div>
-            <h3 className="font-medium text-gray-900">About NDA Requests</h3>
-            <p className="text-sm text-gray-600 mt-1">
-              When an investor requests access to your confidential information:
-            </p>
-            <ul className="text-sm text-gray-600 mt-2 space-y-1">
-              <li>• You can review their request and reason for access</li>
-              <li>• Approve or reject based on your discretion</li>
-              <li>• Once approved, the investor must sign an NDA</li>
-              <li>• After signing, they can view full details</li>
-              <li>• All signed NDAs are legally binding and tracked</li>
-            </ul>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

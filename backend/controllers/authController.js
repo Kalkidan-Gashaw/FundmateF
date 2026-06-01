@@ -76,6 +76,7 @@ export const signup = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        createAt: user.createAt,
       },
     });
   } catch (error) {
@@ -222,6 +223,7 @@ export const login = async (req, res) => {
         role: user.role,
         status: user.status,
         isEmailVerified: user.isEmailVerified,
+        createdAt: user.createdAt,
       },
     });
   } catch (error) {

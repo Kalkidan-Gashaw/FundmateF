@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { FileText, Download, Image, File, MoreVertical, Edit, Trash2, Copy, Share, Check, X, AlertTriangle } from "lucide-react";
+import { FileText, Download, Image, File, MoreVertical, Edit, Trash2, Copy, Share, Check, X, AlertTriangle, Upload, ExternalLink } from "lucide-react";
 import API from "../../services/api";
 
 const MessageBubble = React.memo(({ message, isOwn, onEdit, onDelete, onCopy, onForward }) => {
@@ -9,6 +9,69 @@ const MessageBubble = React.memo(({ message, isOwn, onEdit, onDelete, onCopy, on
   const [showCopied, setShowCopied] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const menuRef = useRef(null);
+
+  // Check if message is a resource share message
+  const isResourceMessage = (messageText) => {
+    if (!messageText) return false;
+    return messageText.includes("📚 **New Resource Shared**") || 
+           messageText.includes("**New Resource Shared**") ||
+           messageText.includes("📎 Type:") ||
+           messageText.includes("📁 Category:");
+  };
+
+  // Extract resource info from message - FIXED to get the correct URL
+  const extractResourceInfo = (messageText) => {
+    let title = "Resource";
+    let description = "";
+    let type = "";
+    let category = "";
+    let link = "";
+    
+    // Split by lines
+    const lines = messageText.split('\n');
+    
+    for (const line of lines) {
+      // Extract title (between ** **)
+      if (line.startsWith('**') && line.endsWith('**') && !line.includes('New Resource Shared')) {
+        title = line.replace(/\*\*/g, '');
+      }
+      // Extract type
+      else if (line.startsWith('📎 Type:')) {
+        type = line.replace('📎 Type:', '').trim();
+      }
+      // Extract category
+      else if (line.startsWith('📁 Category:')) {
+        category = line.replace('📁 Category:', '').trim();
+      }
+      // Extract description (non-empty line that doesn't start with special characters)
+      else if (line.trim() && 
+               !line.startsWith('📚') && 
+               !line.startsWith('**') && 
+               !line.startsWith('📎') && 
+               !line.startsWith('📁') && 
+               !line.startsWith('🔗') &&
+               !line.includes('http://') &&
+               !line.includes('https://')) {
+        description = line.trim();
+      }
+    }
+    
+    // Extract URL - look for http:// or https:// anywhere in the message
+    const urlMatch = messageText.match(/(https?:\/\/[^\s]+)/);
+    if (urlMatch) {
+      link = urlMatch[0];
+    }
+    
+    return { title, description, type, category, link };
+  };
+
+  const handleViewResource = (url) => {
+    if (url && url !== "#" && url !== "") {
+      window.open(url, "_blank");
+    } else {
+      console.error("No valid URL found for resource");
+    }
+  };
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -99,6 +162,13 @@ const MessageBubble = React.memo(({ message, isOwn, onEdit, onDelete, onCopy, on
   };
 
   const isFileMessage = message.fileUrl;
+  const isResource = isResourceMessage(message.message);
+  const resourceInfo = isResource ? extractResourceInfo(message.message) : null;
+
+  // Log for debugging
+  if (isResource && resourceInfo) {
+    console.log("Resource URL:", resourceInfo.link);
+  }
 
   // Delete Confirmation Modal
   const DeleteConfirmationModal = () => {
@@ -139,7 +209,7 @@ const MessageBubble = React.memo(({ message, isOwn, onEdit, onDelete, onCopy, on
   };
 
   // If editing, show edit input
-  if (isEditing && !isFileMessage) {
+  if (isEditing && !isFileMessage && !isResource) {
     return (
       <>
         <div className={`flex ${isOwn ? "justify-end" : "justify-start"} mb-4`}>
@@ -190,7 +260,7 @@ const MessageBubble = React.memo(({ message, isOwn, onEdit, onDelete, onCopy, on
           )}
           
           {/* Message Menu Button - Always visible on hover for own messages */}
-          {isOwn && !isFileMessage && (
+          {isOwn && !isFileMessage && !isResource && (
             <div className="absolute -left-10 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
               <button
                 onClick={() => setShowMenu(!showMenu)}
@@ -202,9 +272,8 @@ const MessageBubble = React.memo(({ message, isOwn, onEdit, onDelete, onCopy, on
           )}
 
           {/* Message Menu Dropdown */}
-          {showMenu && isOwn && !isFileMessage && (
+          {showMenu && isOwn && !isFileMessage && !isResource && (
             <>
-              {/* Backdrop to close menu when clicking elsewhere */}
               <div 
                 className="fixed inset-0 z-40" 
                 onClick={() => setShowMenu(false)}
@@ -245,8 +314,62 @@ const MessageBubble = React.memo(({ message, isOwn, onEdit, onDelete, onCopy, on
             </>
           )}
           
-          {/* Message Bubble Content */}
-          {isFileMessage ? (
+          {/* Resource Message Bubble */}
+          {isResource && resourceInfo && (
+            <div
+              className={`p-4 rounded-2xl ${
+                isOwn
+                  ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-br-sm"
+                  : "bg-purple-50 text-gray-800 rounded-bl-sm border border-purple-200"
+              }`}
+            >
+              <div className="flex items-center mb-3">
+                <Upload className="h-5 w-5 mr-2" />
+                <span className="font-semibold">New Resource Shared</span>
+              </div>
+              
+              <h4 className="font-bold text-lg mb-1">{resourceInfo.title}</h4>
+              {resourceInfo.description && (
+                <p className="text-sm opacity-90 mb-2">{resourceInfo.description}</p>
+              )}
+              
+              <div className="flex flex-wrap gap-2 mb-3">
+                {resourceInfo.type && (
+                  <span className={`text-xs px-2 py-1 rounded-full ${
+                    isOwn ? "bg-purple-500" : "bg-purple-200 text-purple-700"
+                  }`}>
+                    📎 {resourceInfo.type}
+                  </span>
+                )}
+                {resourceInfo.category && (
+                  <span className={`text-xs px-2 py-1 rounded-full ${
+                    isOwn ? "bg-purple-500" : "bg-purple-200 text-purple-700"
+                  }`}>
+                    📁 {resourceInfo.category}
+                  </span>
+                )}
+              </div>
+              
+              {resourceInfo.link && resourceInfo.link !== "#" && resourceInfo.link !== "" ? (
+                <button
+                  onClick={() => handleViewResource(resourceInfo.link)}
+                  className={`inline-flex items-center space-x-1 text-sm font-medium ${
+                    isOwn ? "text-yellow-200 hover:text-yellow-100" : "text-purple-600 hover:text-purple-700"
+                  }`}
+                >
+                  <span>View Resource</span>
+                  <ExternalLink className="h-3 w-3" />
+                </button>
+              ) : (
+                <p className={`text-sm ${isOwn ? "text-yellow-200" : "text-purple-600"}`}>
+                  Click the link above to view the resource
+                </p>
+              )}
+            </div>
+          )}
+          
+          {/* File Message Bubble */}
+          {isFileMessage && !isResource && (
             <div
               className={`p-3 rounded-2xl cursor-pointer ${
                 isOwn
@@ -270,7 +393,10 @@ const MessageBubble = React.memo(({ message, isOwn, onEdit, onDelete, onCopy, on
                 </button>
               </div>
             </div>
-          ) : (
+          )}
+          
+          {/* Regular Text Message Bubble */}
+          {!isFileMessage && !isResource && (
             <div
               className={`px-4 py-2 rounded-2xl cursor-pointer ${
                 isOwn

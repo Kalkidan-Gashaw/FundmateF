@@ -110,6 +110,7 @@ export const findStartups = async (req, res) => {
   try {
     const userId = req.user.id;
     
+    // Get investor preferences
     const investorProfile = await InvestorProfile.findOne({ where: { userId } });
     
     if (!investorProfile) {
@@ -119,16 +120,20 @@ export const findStartups = async (req, res) => {
       });
     }
 
+    // Build filter conditions
     const whereConditions = { status: "active" };
     
+    // Filter by sector
     if (investorProfile.preferredSectors && investorProfile.preferredSectors.length > 0) {
       whereConditions.sector = { [Op.in]: investorProfile.preferredSectors };
     }
     
+    // Filter by funding stage
     if (investorProfile.preferredStages && investorProfile.preferredStages.length > 0) {
       whereConditions.fundingStage = { [Op.in]: investorProfile.preferredStages };
     }
     
+    // Filter by funding required
     if (investorProfile.investmentRangeMin && investorProfile.investmentRangeMax) {
       whereConditions.fundingRequired = {
         [Op.between]: [investorProfile.investmentRangeMin, investorProfile.investmentRangeMax],
@@ -143,6 +148,7 @@ export const findStartups = async (req, res) => {
       };
     }
 
+    // Find matching startups
     const startups = await StartupProfile.findAll({
       where: whereConditions,
       include: [
@@ -155,6 +161,7 @@ export const findStartups = async (req, res) => {
       order: [["createdAt", "DESC"]],
     });
 
+    // Get all NDAs signed by this investor
     const signedNdas = await NDA.findAll({
       where: {
         investorId: userId,
@@ -165,50 +172,48 @@ export const findStartups = async (req, res) => {
     
     const signedStartupIds = new Set(signedNdas.map(nda => nda.startupId));
 
+    // Calculate match score for each startup
     const processedStartups = startups.map((startup) => {
       const hasNDA = signedStartupIds.has(startup.id);
       
+      // Calculate match score (0-100)
       let score = 0;
       let maxScore = 0;
       
+      // Sector match (30 points)
       if (investorProfile.preferredSectors?.includes(startup.sector)) {
         score += 30;
       }
       maxScore += 30;
       
+      // Stage match (30 points)
       if (investorProfile.preferredStages?.includes(startup.fundingStage)) {
         score += 30;
       }
       maxScore += 30;
       
-      if (investorProfile.investmentRangeMin && investorProfile.investmentRangeMax) {
-        const funding = parseFloat(startup.fundingRequired) || 0;
-        const min = parseFloat(investorProfile.investmentRangeMin);
-        const max = parseFloat(investorProfile.investmentRangeMax);
-        if (funding >= min && funding <= max) {
-          score += 40;
-        } else if (funding <= max) {
-          score += 20;
-        }
-      } else if (investorProfile.investmentRangeMax) {
-        const funding = parseFloat(startup.fundingRequired) || 0;
-        const max = parseFloat(investorProfile.investmentRangeMax);
-        if (funding <= max) {
-          score += 40;
-        }
-      } else {
-        score += 40;
+      // Funding amount match (40 points)
+      const funding = parseFloat(startup.fundingRequired) || 0;
+      const minRange = parseFloat(investorProfile.investmentRangeMin) || 0;
+      const maxRange = parseFloat(investorProfile.investmentRangeMax) || Infinity;
+      
+      if (funding >= minRange && funding <= maxRange) {
+        score += 40; // Perfect match
+      } else if (funding <= maxRange) {
+        score += 20; // Within max only
       }
       maxScore += 40;
       
       const matchPercentage = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
       
+      // Return data based on NDA status
       if (hasNDA) {
         return {
           ...startup.toJSON(),
           matchScore: matchPercentage,
         };
       } else {
+        // Return without description
         return {
           id: startup.id,
           startupName: startup.startupName,
@@ -217,7 +222,7 @@ export const findStartups = async (req, res) => {
           fundingRequired: startup.fundingRequired,
           teamSize: startup.teamSize,
           isWomenLed: startup.isWomenLed,
-          User: startup.owner,
+          owner: startup.owner,
           matchScore: matchPercentage,
           description: null,
           requiresNDA: true,
@@ -225,6 +230,7 @@ export const findStartups = async (req, res) => {
       }
     });
     
+    // Sort by match score (highest first)
     processedStartups.sort((a, b) => b.matchScore - a.matchScore);
 
     res.status(200).json({

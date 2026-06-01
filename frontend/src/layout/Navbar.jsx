@@ -143,7 +143,7 @@ const Navbar = () => {
                       <span>My Mentees</span>
                     </Link>
                     <Link
-                      to="/mentor/resources"
+                      to="/resources"
                       className="text-gray-700 hover:text-blue-600 transition duration-200 font-medium flex items-center space-x-1"
                     >
                       <BookOpen className="h-4 w-4" />

@@ -4,20 +4,14 @@ import API from "../services/api";
 import { 
   User, 
   Users, 
-  Calendar, 
-  BookOpen, 
   LogOut,
   CheckCircle,
   Clock,
-  Star,
   Bell,
   MessageSquare,
   GraduationCap,
-  FileText,
-  Video,
-  TrendingUp,
   Settings,
-  Heart
+  MessageCircle
 } from "lucide-react";
 
 const MentorDashboard = () => {
@@ -30,7 +24,6 @@ const MentorDashboard = () => {
     pendingCount: 0,
     activeMenteesCount: 0,
     completedSessions: 0,
-    rating: 0
   });
   const [loading, setLoading] = useState(true);
 
@@ -55,28 +48,25 @@ const MentorDashboard = () => {
       setMentorProfile(profileRes.data.data);
       
       // Fetch pending requests
-      const pendingRes = await API.get("/mentor/requests");
-      setPendingRequests(pendingRes.data.data);
+      const pendingRes = await API.get("/mentor/pending-requests");
+      setPendingRequests(pendingRes.data.data || []);
       
       // Fetch active mentees
       const menteesRes = await API.get("/mentor/active-mentees");
-      setActiveMentees(menteesRes.data.data);
+      setActiveMentees(menteesRes.data.data || []);
       
-      // Calculate stats
+      // Calculate stats from real data
       setStats({
         pendingCount: pendingRes.data.data?.length || 0,
         activeMenteesCount: menteesRes.data.data?.length || 0,
         completedSessions: profileRes.data.data?.totalSessions || 0,
-        rating: profileRes.data.data?.rating || 4.8
       });
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
-      // Set default stats if no profile exists
       setStats({
         pendingCount: 0,
         activeMenteesCount: 0,
         completedSessions: 0,
-        rating: 0
       });
     } finally {
       setLoading(false);
@@ -89,23 +79,27 @@ const MentorDashboard = () => {
     navigate("/login");
   };
 
-  const renderStars = (rating) => {
-    const stars = [];
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 >= 0.5;
-    
-    for (let i = 0; i < fullStars; i++) {
-      stars.push(<Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />);
-    }
-    if (hasHalfStar) {
-      stars.push(<Star key="half" className="h-4 w-4 fill-yellow-400 text-yellow-400" />);
-    }
-    const emptyStars = 5 - stars.length;
-    for (let i = 0; i < emptyStars; i++) {
-      stars.push(<Star key={`empty-${i}`} className="h-4 w-4 text-gray-300" />);
-    }
-    return stars;
+  const handleStartChat = (userId, userName) => {
+    navigate(`/messages?userId=${userId}&name=${encodeURIComponent(userName)}&role=entrepreneur`);
   };
+
+  // Calculate profile completion percentage based on actual filled data
+  const calculateProfileCompletion = () => {
+    if (!mentorProfile) return 0;
+    
+    let completed = 0;
+    let total = 5;
+    
+    if (mentorProfile.expertise && mentorProfile.expertise.length > 0) completed++;
+    if (mentorProfile.bio && mentorProfile.bio.trim() !== "") completed++;
+    if (mentorProfile.currentRole && mentorProfile.currentRole.trim() !== "") completed++;
+    if (mentorProfile.company && mentorProfile.company.trim() !== "") completed++;
+    if (mentorProfile.yearsOfExperience && mentorProfile.yearsOfExperience > 0) completed++;
+    
+    return Math.round((completed / total) * 100);
+  };
+
+  const profileCompletion = calculateProfileCompletion();
 
   if (loading) {
     return (
@@ -132,7 +126,7 @@ const MentorDashboard = () => {
                 </span>
               </div>
               <div className="text-gray-600">
-                Last login: Today, {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                Member since {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
               </div>
             </div>
           </div>
@@ -151,8 +145,8 @@ const MentorDashboard = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      {/* Stats Cards - Only 3 cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
@@ -186,17 +180,6 @@ const MentorDashboard = () => {
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm">Rating</p>
-              <p className="text-2xl font-bold text-purple-600">{stats.rating.toFixed(1)}</p>
-            </div>
-            <div className="p-3 bg-purple-100 rounded-full">
-              <Star className="h-6 w-6 text-purple-600" />
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Main Content */}
@@ -210,7 +193,7 @@ const MentorDashboard = () => {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <button 
-                onClick={() => navigate("/mentor/requests")}
+                onClick={() => navigate("/mentor/pending-requests")}
                 className="p-4 rounded-lg border border-gray-200 hover:border-purple-500 hover:bg-purple-50 transition group text-left"
               >
                 <div className="flex items-center">
@@ -260,16 +243,16 @@ const MentorDashboard = () => {
               </button>
 
               <button 
-                onClick={() => navigate("/mentor/resources")}
-                className="p-4 rounded-lg border border-gray-200 hover:border-yellow-500 hover:bg-yellow-50 transition group text-left"
+                onClick={() => navigate("/messages")}
+                className="p-4 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition group text-left"
               >
                 <div className="flex items-center">
-                  <div className="p-3 bg-yellow-100 rounded-lg mr-4 group-hover:bg-yellow-200">
-                    <BookOpen className="h-6 w-6 text-yellow-600" />
+                  <div className="p-3 bg-blue-100 rounded-lg mr-4 group-hover:bg-blue-200">
+                    <MessageCircle className="h-6 w-6 text-blue-600" />
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">Resources</p>
-                    <p className="text-sm text-gray-500">Share learning materials</p>
+                    <p className="font-medium text-gray-900">Messages</p>
+                    <p className="text-sm text-gray-500">Chat with your mentees</p>
                   </div>
                 </div>
               </button>
@@ -285,7 +268,7 @@ const MentorDashboard = () => {
               </h2>
               {pendingRequests.length > 0 && (
                 <button 
-                  onClick={() => navigate("/mentor/requests")}
+                  onClick={() => navigate("/mentor/pending-requests")}
                   className="text-sm text-purple-600 hover:text-purple-700"
                 >
                   View all →
@@ -317,7 +300,7 @@ const MentorDashboard = () => {
                       </div>
                     </div>
                     <button 
-                      onClick={() => navigate("/mentor/requests")}
+                      onClick={() => navigate("/mentor/pending-requests")}
                       className="px-3 py-1 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition"
                     >
                       Review
@@ -328,11 +311,11 @@ const MentorDashboard = () => {
             )}
           </div>
 
-          {/* Active Mentees Section */}
+          {/* Active Mentees Section with Chat Button */}
           <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-gray-900 flex items-center">
-                <Heart className="h-5 w-5 text-green-600 mr-2" />
+                <Users className="h-5 w-5 text-green-600 mr-2" />
                 Active Mentees
               </h2>
               {activeMentees.length > 0 && (
@@ -363,18 +346,14 @@ const MentorDashboard = () => {
                       <div className="ml-3">
                         <p className="font-medium text-gray-900">{mentee.entrepreneur?.name}</p>
                         <p className="text-sm text-gray-500">{mentee.topic}</p>
-                        {mentee.scheduledDate && (
-                          <p className="text-xs text-green-600">
-                            Next: {new Date(mentee.scheduledDate).toLocaleDateString()}
-                          </p>
-                        )}
                       </div>
                     </div>
                     <button 
-                      onClick={() => navigate("/mentor/my-mentees")}
-                      className="text-purple-600 hover:text-purple-700 text-sm"
+                      onClick={() => handleStartChat(mentee.entrepreneur?.id, mentee.entrepreneur?.name)}
+                      className="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition flex items-center space-x-1"
                     >
-                      Manage →
+                      <MessageCircle className="h-3 w-3" />
+                      <span>Chat</span>
                     </button>
                   </div>
                 ))}
@@ -422,7 +401,7 @@ const MentorDashboard = () => {
               <div className="flex justify-between">
                 <span className="text-gray-600">Member Since</span>
                 <span className="font-medium">
-                  {new Date(user?.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                  {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'N/A'}
                 </span>
               </div>
               {mentorProfile?.currentRole && (
@@ -438,11 +417,11 @@ const MentorDashboard = () => {
                 </div>
               )}
               <div className="flex justify-between">
-                <span className="text-gray-600">Response Rate</span>
-                <span className="font-medium text-green-600">95%</span>
+                <span className="text-gray-600">Profile Complete</span>
+                <span className="font-medium text-green-600">{profileCompletion}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-green-600 h-2 rounded-full" style={{ width: "95%" }}></div>
+                <div className="bg-green-600 h-2 rounded-full" style={{ width: `${profileCompletion}%` }}></div>
               </div>
             </div>
             
@@ -464,66 +443,6 @@ const MentorDashboard = () => {
             >
               Edit Profile
             </button>
-          </div>
-
-          {/* Upcoming Sessions */}
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
-              <Calendar className="h-5 w-5 text-purple-600 mr-2" />
-              Upcoming Sessions
-            </h2>
-            {activeMentees.filter(m => m.scheduledDate && new Date(m.scheduledDate) > new Date()).length === 0 ? (
-              <div className="text-center py-4">
-                <Calendar className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                <p className="text-gray-500 text-sm">No upcoming sessions</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {activeMentees
-                  .filter(m => m.scheduledDate && new Date(m.scheduledDate) > new Date())
-                  .slice(0, 3)
-                  .map((mentee) => (
-                    <div key={mentee.id} className="p-3 bg-purple-50 rounded-lg">
-                      <p className="font-medium text-gray-900">
-                        Mentorship with {mentee.entrepreneur?.name}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {new Date(mentee.scheduledDate).toLocaleString()}
-                      </p>
-                      {mentee.meetingLink && (
-                        <div className="flex items-center mt-2 text-sm text-purple-600">
-                          <Video className="h-4 w-4 mr-1" />
-                          <a href={mentee.meetingLink} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                            Join Meeting
-                          </a>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-              </div>
-            )}
-          </div>
-
-          {/* Quick Stats */}
-          <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6">
-            <h3 className="font-bold text-gray-900 mb-3">Mentor Impact</h3>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Total Sessions</span>
-                <span className="font-bold text-purple-600">{stats.completedSessions}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Active Mentees</span>
-                <span className="font-bold text-purple-600">{stats.activeMenteesCount}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Average Rating</span>
-                <div className="flex items-center">
-                  {renderStars(stats.rating)}
-                  <span className="ml-1 font-bold text-purple-600">{stats.rating.toFixed(1)}</span>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
