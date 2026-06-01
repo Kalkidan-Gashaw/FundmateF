@@ -81,13 +81,12 @@ const Register = () => {
     setMessage("");
     
     try {
-      const response = await axios.post("http://localhost:5000/api/auth/signup", {
+      const response = await API.post("/auth/signup", {
         name: formData.name,
         email: formData.email,
         password: formData.password,
         role: formData.role,
         adminSecret: formData.adminSecret,
-        
       });
       
       setRegisteredEmail(formData.email);
