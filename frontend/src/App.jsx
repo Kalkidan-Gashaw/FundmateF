@@ -30,7 +30,7 @@ import Resources from "./components/mentor/Resources";
 import ChatPage from "./components/chat/ChatPage";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import AdminStartups from "./components/admin/AdminStartups";
-import AdminNDAs from "./components/admin/AdminNDAs";
+import AdminNDAs from "./components/admin/AdminNDAS";
 import AdminAnalytics from "./components/admin/AdminAnalytics";
 import AdminMentorships from "./components/admin/AdminMentorships";
 import AdminBroadcast from "./components/admin/AdminBroadcast";
