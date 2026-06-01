@@ -26,6 +26,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 import adminRoutes from "./Routes/adminRoutes.js";
 import aiRoutes from "./Routes/aiRoutes.js";
+import notificationRoutes from "./Routes/notificationRoutes.js";
+
 
 dotenv.config();
 
@@ -144,7 +146,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options("/*", cors(corsOptions));
+app.options("*", cors(corsOptions));
 app.use(express.json());
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -158,7 +160,6 @@ app.use("/api/mentor", mentorRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/resources", resourceRoutes);
 app.use("/api/admin", adminRoutes);
-import notificationRoutes from "./Routes/notificationRoutes.js";
 
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/ai", aiRoutes);
