@@ -3,12 +3,18 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const sequelize = process.env.DATABASE_URL || process.env.DataBase_URL
-  ? new Sequelize(process.env.DATABASE_URL || process.env.DataBase_URL, {
+const databaseUrl = process.env.DATABASE_URL || process.env.DataBase_URL;
+
+const sequelize = databaseUrl
+  ? new Sequelize(databaseUrl, {
       dialect: "postgres",
       logging: false,
-      ssl: true,
-      native: true,
+      dialectOptions: {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false,
+        },
+      },
     })
   : new Sequelize(
       process.env.PGDATABASE || process.env.DB_NAME,
