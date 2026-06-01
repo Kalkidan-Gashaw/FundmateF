@@ -134,13 +134,7 @@ io.on("connection", (socket) => {
 
 // Middleware
 const corsOptions = {
-  origin: (origin, callback) => {
-    // Allow requests with no origin (e.g., curl, server-to-server)
-    if (!origin) return callback(null, true);
-    // allowedOrigins was declared earlier (includes process.env.FRONTEND_URL)
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(new Error("Not allowed by CORS"));
-  },
+  origin: allowedOrigins,
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "Accept"],
