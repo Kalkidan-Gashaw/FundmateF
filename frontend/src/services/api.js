@@ -1,8 +1,11 @@
 import axios from "axios";
 
 const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const normalized = apiUrl.replace(/\/$/, "");
+const baseURL = normalized.endsWith("/api") ? normalized : `${normalized}/api`;
+
 const API = axios.create({
-  baseURL: `${apiUrl.replace(/\/$/, "")}/api`,
+  baseURL,
 });
 
 // Add token to every request
