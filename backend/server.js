@@ -14,17 +14,17 @@ import {
   MentorshipRequest,
   Message,
 } from "./models/index.js";
-import authRoutes from "./routes/authRoutes.js";
-import entrepreneurRoutes from "./routes/entrepreneurRoutes.js";
-import investorRoutes from "./routes/investorRoutes.js";
-import ndaRoutes from "./routes/ndaRoutes.js";
-import mentorRoutes from "./routes/mentorRoutes.js";
-import chatRoutes from "./routes/chatRoutes.js";
+import authRoutes from "./Routes/authRoutes.js";
+import entrepreneurRoutes from "./Routes/entrepreneurRoutes.js";
+import investorRoutes from "./Routes/investorRoutes.js";
+import ndaRoutes from "./Routes/ndaRoutes.js";
+import mentorRoutes from "./Routes/mentorRoutes.js";
+import chatRoutes from "./Routes/chatRoutes.js";
 
-import resourceRoutes from "./routes/resourceRoutes.js";
+import resourceRoutes from "./Routes/resourceRoutes.js";
 import path from "path";
 import { fileURLToPath } from "url";
-import adminRoutes from "./routes/adminRoutes.js";
+import adminRoutes from "./Routes/adminRoutes.js";
 import aiRoutes from "./Routes/aiRoutes.js";
 
 dotenv.config();
