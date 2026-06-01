@@ -41,6 +41,7 @@ const __dirname = path.dirname(__filename);
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
+  "https://fundmatef-frontend.onrender.com",
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 
@@ -146,7 +147,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+app.options("/*", cors(corsOptions));
 app.use(express.json());
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
