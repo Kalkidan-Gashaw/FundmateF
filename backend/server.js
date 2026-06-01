@@ -3,7 +3,17 @@ import cors from "cors";
 import dotenv from "dotenv";
 import http from "http";
 import { Server } from "socket.io";
-import { sequelize, User, StartupProfile, InvestorProfile, Document, NDA, MentorProfile, MentorshipRequest, Message } from "./models/index.js";
+import {
+  sequelize,
+  User,
+  StartupProfile,
+  InvestorProfile,
+  Document,
+  NDA,
+  MentorProfile,
+  MentorshipRequest,
+  Message,
+} from "./models/index.js";
 import authRoutes from "./routes/authRoutes.js";
 import entrepreneurRoutes from "./routes/entrepreneurRoutes.js";
 import investorRoutes from "./routes/investorRoutes.js";
@@ -17,7 +27,6 @@ import { fileURLToPath } from "url";
 import adminRoutes from "./routes/adminRoutes.js";
 import aiRoutes from "./Routes/aiRoutes.js";
 
-
 dotenv.config();
 
 const app = express();
@@ -26,11 +35,16 @@ const PORT = process.env.PORT || 5000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-
 // Socket.IO setup for real-time chat
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173", "http://localhost:3000"],
+    origin: allowedOrigins,
     credentials: true,
   },
 });
@@ -79,29 +93,29 @@ io.on("connection", (socket) => {
   });
 
   // Handle mark as read
- socket.on('mark-read', async (data) => {
-  const { senderId, receiverId } = data;
-  try {
-    await Message.update(
-      { isRead: true },
-      {
-        where: {
-          senderId: senderId,
-          receiverId: receiverId,
-          isRead: false,
+  socket.on("mark-read", async (data) => {
+    const { senderId, receiverId } = data;
+    try {
+      await Message.update(
+        { isRead: true },
+        {
+          where: {
+            senderId: senderId,
+            receiverId: receiverId,
+            isRead: false,
+          },
         },
+      );
+
+      // Notify sender that messages were read
+      const senderSocketId = connectedUsers.get(senderId);
+      if (senderSocketId) {
+        io.to(senderSocketId).emit("messages-read", { byUser: receiverId });
       }
-    );
-    
-    // Notify sender that messages were read
-    const senderSocketId = connectedUsers.get(senderId);
-    if (senderSocketId) {
-      io.to(senderSocketId).emit('messages-read', { byUser: receiverId });
+    } catch (error) {
+      console.error("Error marking messages as read:", error);
     }
-  } catch (error) {
-    console.error('Error marking messages as read:', error);
-  }
-});
+  });
 
   // Handle disconnect
   socket.on("disconnect", () => {
@@ -144,7 +158,7 @@ const syncDatabase = async () => {
   try {
     await sequelize.authenticate();
     console.log("Database connected");
-    
+
     await sequelize.sync({ alter: true });
     console.log("Database synced");
   } catch (error) {
