@@ -1,3 +1,4 @@
+
 # FundMate
 
 FundMate is a full-stack web application that connects entrepreneurs, investors, mentors, and admins in one platform. Entrepreneurs can create startup profiles, investors can browse startups and sign NDAs, and mentors can support founders through real-time chat and mentorship.
