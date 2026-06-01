@@ -3,8 +3,8 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const sequelize = process.env.DATABASE_URL
-  ? new Sequelize(process.env.DATABASE_URL, {
+const sequelize = process.env.DATABASE_URL || process.env.DataBase_URL
+  ? new Sequelize(process.env.DATABASE_URL || process.env.DataBase_URL, {
       dialect: "postgres",
       logging: false,
       ssl: true,
