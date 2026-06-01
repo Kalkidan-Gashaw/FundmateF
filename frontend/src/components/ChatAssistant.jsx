@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import axios from "axios";
+import API from "../services/api";
 import { Bot, Send } from "lucide-react";
 
 export default function ChatAssistant() {
@@ -42,16 +42,9 @@ export default function ChatAssistant() {
     setLoading(true);
 
     try {
-      const API_BASE =
-        import.meta.env.VITE_API_URL ||
-        "http://localhost:5000";
-
-      const res = await axios.post(
-        `${API_BASE}/api/ai/chat`,
-        {
-          message: messageText,
-        }
-      );
+      const res = await API.post("/ai/chat", {
+        message: messageText,
+      });
 
       const botMsg = {
         id: Date.now() + 1,

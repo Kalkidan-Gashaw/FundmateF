@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import API from "../services/api";
 import { Rocket, Mail, Lock, User, ChevronDown, Eye, EyeOff, CheckCircle, XCircle } from "lucide-react";
 
 const Register = () => {

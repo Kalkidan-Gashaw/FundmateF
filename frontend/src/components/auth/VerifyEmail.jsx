@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+import API from "../../services/api";
 import { CheckCircle, XCircle, Loader, Mail } from "lucide-react";
 
 const VerifyEmail = () => {
@@ -19,7 +19,7 @@ const VerifyEmail = () => {
 
   const verifyEmail = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/auth/verify-email/${token}`);
+      const response = await API.get(`/auth/verify-email/${token}`);
       setStatus("success");
       setMessage(response.data.message);
       // Redirect to login after 3 seconds

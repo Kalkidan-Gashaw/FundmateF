@@ -1,6 +1,6 @@
 import { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import API from "../services/api";
 import { Rocket, Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
 
@@ -30,7 +30,7 @@ const Login = () => {
     setNeedsVerification(false);
     
     try {
-      const response = await axios.post("http://localhost:5000/api/auth/login", formData);
+      const response = await API.post("/auth/login", formData);
       const { token, user } = response.data;
       
       login(token, user);
@@ -69,7 +69,7 @@ const Login = () => {
   const handleResendVerification = async () => {
     setResending(true);
     try {
-      await axios.post("http://localhost:5000/api/auth/resend-verification", {
+      await API.post("/auth/resend-verification", {
         email: unverifiedEmail || formData.email,
       });
       setMessage({ type: "success", text: "Verification email sent! Please check your inbox." });
