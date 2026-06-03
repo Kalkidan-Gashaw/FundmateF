@@ -41,7 +41,7 @@ const __dirname = path.dirname(__filename);
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
-  "fundmate-k7qpuxbkk-kalkidan-gashaws-projects.vercel.app",
+  "https://fundmate-667i2x6zn-kalkidan-gashaws-projects.vercel.app",
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 
