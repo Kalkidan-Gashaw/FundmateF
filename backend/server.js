@@ -20,14 +20,12 @@ import investorRoutes from "./Routes/investorRoutes.js";
 import ndaRoutes from "./Routes/ndaRoutes.js";
 import mentorRoutes from "./Routes/mentorRoutes.js";
 import chatRoutes from "./Routes/chatRoutes.js";
-
 import resourceRoutes from "./Routes/resourceRoutes.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import adminRoutes from "./Routes/adminRoutes.js";
 import aiRoutes from "./Routes/aiRoutes.js";
 import notificationRoutes from "./Routes/notificationRoutes.js";
-
 
 dotenv.config();
 
@@ -37,18 +35,16 @@ const PORT = process.env.PORT || 5000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Socket.IO setup for real-time chat
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:3000",
-  "https://fundmate-667i2x6zn-kalkidan-gashaws-projects.vercel.app",
-  process.env.FRONTEND_URL,
-].filter(Boolean);
+// Allow ALL origins (CORS wide open)
+const allowedOrigins = ["*"];
 
+// Socket.IO setup with ALL origins allowed
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins,
+    origin: "*",
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Accept"],
   },
 });
 
@@ -65,7 +61,7 @@ io.on("connection", (socket) => {
     console.log("Connected users:", Array.from(connectedUsers.keys()));
   });
 
-  // Handle sending message via socket by notifying receiver only
+  // Handle sending message via socket
   socket.on("send-message", (data) => {
     const { senderId, receiverId, message, id, createdAt } = data;
     console.log(`Socket message from ${senderId} to ${receiverId}: ${message}`);
@@ -107,10 +103,9 @@ io.on("connection", (socket) => {
             receiverId: receiverId,
             isRead: false,
           },
-        },
+        }
       );
 
-      // Notify sender that messages were read
       const senderSocketId = connectedUsers.get(senderId);
       if (senderSocketId) {
         io.to(senderSocketId).emit("messages-read", { byUser: receiverId });
@@ -132,15 +127,14 @@ io.on("connection", (socket) => {
   });
 });
 
-// Middleware
-const corsOptions = {
-  origin: allowedOrigins,
+// Express CORS middleware - Allow ALL origins
+app.use(cors({
+  origin: "*",
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "Accept"],
-};
+}));
 
-app.use(cors(corsOptions));
 app.use(express.json());
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -154,9 +148,9 @@ app.use("/api/mentor", mentorRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/resources", resourceRoutes);
 app.use("/api/admin", adminRoutes);
-
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/ai", aiRoutes);
+
 // Test route
 app.get("/", (req, res) => {
   res.json({ message: "FundMate API is running" });
